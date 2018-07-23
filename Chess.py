@@ -1,21 +1,56 @@
 from colorama import Fore, Style, Back, init
 from os import system, name
 class Piece:
-    def __init__(self,name,color,symbol,moves,position):
-        self.name=name
+    def __init__(self,owner,color,position):
         self.color=color
-        self.symbol=symbol
-        self.moves=moves
         self.position=position
-    def move(self):
-        if self.name=="Pawn":
-            pass#self.position
-class player:
+        self.hasMoved=False
+        self.owner=owner
+class Pawn(Piece):
+    def __init__(self,owner,color,position):
+        Piece.__init__(self,owner,color,position)
+        if self.color=="White":
+            self.symbol=Fore.BLUE+" p "
+        else:           
+            self.symbol=Fore.RED+" p "
+        self.name="Pawn"
+        self.points=1
+    def isValidMove(self,position):           
+        if self.color=="White":
+            if self.hasMoved==False:
+                if position==self.position[0]+str(int(self.position[1])+2):
+                    return True
+            if position==self.position[0]+str(int(self.position[1])+1):
+                return True        
+            return False
+        else:
+            if self.hasMoved==False:
+                if position==self.position[0]+str(int(self.position[1])-2):
+                    return True
+            if position==self.position[0]+str(int(self.position[1])-1):
+                return True        
+            return False
+class Player:
     def __init__(self,color):
+        self.turnComplete=False
         self.color=color
-        #pieces=[Piece("pawn",color,p,)]
+        if self.color=="White":
+            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2")]
+        else:
+            self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7")]
 class Board:    
     def __init__(self):
+        self.board=[]
+        self.players=[Player("White"),Player("Black")]
+
+        self.boardDict={}
+        self.NoTheWorldMustBePeopled()
+    def printBoard(self):
+        for i in range(len(self.board)-1):
+            print colorRow(self.board[i],i)
+        print "".join(self.board[8])
+    def NoTheWorldMustBePeopled(self):#much ado about nothing -benedick
+        self.boardDict={}
         self.board=[]
         for i in range(8,0,-1):
             if i<10:
@@ -26,47 +61,15 @@ class Board:
                 row.append( "   " )
             self.board.append(row)
         self.board.append(["[  ]", "[A]","[B]","[C]","[D]","[E]","[F]","[G]","[H]"])
-        self.timesHit=0
-        self.shipsCovering=17
-    def printBoard(self):
-        for i in range(len(self.board)-1):
-            print colorRow(self.board[i],i)
-        print "".join(self.board[8])
-    def addShip(self,spot,direction,ship):      
-        if (direction.upper()=="R"):
-            if (self.board[0].index("["+str(spot[0]).upper()+"]")+self.Ships[ship].length<10):
-                for i in range(0,self.Ships[ship].length):
-                    self.changeCoordinateSign(self.incrementCoordinate(spot,direction,i),"[+]")
-                    self.Ships[ship].updateSpotsOccupied(str(self.board[0][self.board[0].index("["+str(spot[0]).upper()+"]")+i][1]+spot[1:])[:-1])
-            else:
-                for i in range(0,self.Ships[ship].length):
-                    self.changeCoordinateSign(self.incrementCoordinate((" ABCDEFGHIJ"[11-self.Ships[ship].length]+spot[1:]),direction,i),"[+]")
-                    
-                    self.Ships[ship].updateSpotsOccupied(str(self.board[0][11-self.Ships[ship].length+i][1]+spot[1:])[:-1])
-        else:
-            if ((int(spot[1:])+self.Ships[ship].length)<10):
-                for i in range(0, self.Ships[ship].length):
-                    self.changeCoordinateSign(self.incrementCoordinate(spot,direction,i),"[+]")
-                    self.Ships[ship].updateSpotsOccupied(str(spot[0]).upper()+str(int(spot[1:])+i))
-            else:
-                for i in range(0, self.Ships[ship].length):
-                    self.changeCoordinateSign(self.incrementCoordinate(str(spot[0]).upper()+str(int(11-self.Ships[ship].length)),direction,i),"[+]")                    
-                    self.Ships[ship].updateSpotsOccupied(str(spot[0]).upper()+str(11-self.Ships[ship].length+i))
-
-
-
-    def youSunkMyBattleShip(self):
-        for ship in self.Ships:
-            sunk=True
-            for spot in self.Ships[ship].spotsOccupied:
-                if self.getCoordinateSign(spot)=="[+]":
-                    sunk=False
-            if sunk:
-                return True               
+        for player in self.players:
+            for piece in player.pieces:
+                self.changeCoordinateSign(piece.position,piece.symbol)
+                self.boardDict[piece.position]=piece
     def getCoordinateSign(self,spot):
-        return self.board[int(spot[1:])][self.board[0].index("["+str(spot[0]).upper()+"]")]
+        return self.board[8-int(spot[1:])][self.board[8].index("["+str(spot[0]).upper()+"]")]
     def changeCoordinateSign(self,spot,sign):
-        self.board[int(spot[1:])][self.board[0].index("["+str(spot[0]).upper()+"]")] = sign
+        #print spot,sign
+        self.board[8-int(spot[1:])][self.board[8].index("["+str(spot[0]).upper()+"]")] = sign
     def incrementCoordinate(self,spot,direction,increment):
         alphabet=" ABCDEFGHIJ"
         if direction.upper()=="R":
@@ -74,7 +77,44 @@ class Board:
         else:
             return spot[0]+str(int(spot[1:])+increment)
 
-
+    def takeTurns(self):
+        while True:
+            for player in self.players:
+                while True:
+                    try:
+                        clear()
+                        self.printBoard()
+                        print player.color +"'s Turn"                        
+                        piecePosition=raw_input("Please choose one of your pieces(ex:a2)\n->").rstrip("\r").upper()
+                        if self.boardDict[piecePosition].color!=player.color:
+                            raise ValueError
+                        correctPiece=raw_input("You have chosen your "+self.boardDict[piecePosition].name+" at "+piecePosition+". Is this correct(y/n)?\n->")
+                        if correctPiece[0].upper()=="Y":
+                            newPiecePosition=raw_input("Where would you like to move it(ex:a3)?\n->").rstrip("\r").upper()
+                            correctPieceMove=raw_input("You have chosen to move your "+self.boardDict[piecePosition].name+" from "+piecePosition+" to "+newPiecePosition+". Is this correct(y/n)?\n->")
+                            if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition):
+                                if newPiecePosition in self.boardDict.keys():
+                                    #self.boardDict[piecePosition].owner.pieces=[item for item in player.pieces if item.position != newPiecePosition]#del  self.boardDict[newPiecePosition]
+                                    self.boardDict[newPiecePosition].owner.pieces.remove(self.boardDict[newPiecePosition])
+                                    
+                                self.boardDict[piecePosition].hasMoved=True
+                                self.boardDict[piecePosition].position=newPiecePosition
+                                self.NoTheWorldMustBePeopled() 
+                                
+                            else:
+                                raise ValueError
+                        else:
+                            raise ValueError
+                        
+                    except ValueError:
+                        pass
+                    except KeyError:
+                        pass
+                    else:
+                        break
+                            
+                            
+                player.turnComplete=False        
 def colorRow(row,rowNum):
     colorRowList=[]
     colorRowList.append(row[0])
@@ -118,4 +158,5 @@ def main():
     init()
     board=Board()
     board.printBoard()
+    board.takeTurns()
 main()

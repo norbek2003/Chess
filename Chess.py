@@ -15,20 +15,28 @@ class Pawn(Piece):
             self.symbol=Fore.RED+" p "
         self.name="Pawn"
         self.points=1
-    def isValidMove(self,position):           
+    def isValidMove(self,position,positionSymbol):           
+        spotIsOccupied=False
+        if positionSymbol!="   ":
+            spotIsOccupied=True
         if self.color=="White":
             if self.hasMoved==False:
-                if position==self.position[0]+str(int(self.position[1])+2):
+                if position==self.position[0]+str(int(self.position[1])+2) and not spotIsOccupied:
                     return True
-            if position==self.position[0]+str(int(self.position[1])+1):
-                return True        
+            if (position==self.position[0]+str(int(self.position[1])+1)) and not spotIsOccupied:
+                return True       
+            if (position==("ABCDEFGH"["ABCDEFGH".index(self.position[0])+1] or "ABCDEFGH"["ABCDEFGH".index(self.position[0])-1])+str(int(self.position[1])+1)) and spotIsOccupied:
+                return True
             return False
+        
         else:
             if self.hasMoved==False:
-                if position==self.position[0]+str(int(self.position[1])-2):
+                if position==self.position[0]+str(int(self.position[1])-2) and not spotIsOccupied:
                     return True
-            if position==self.position[0]+str(int(self.position[1])-1):
-                return True        
+            if position==self.position[0]+str(int(self.position[1])-1) and not spotIsOccupied:
+                return True      
+            if (position==("ABCDEFGH"["ABCDEFGH".index(self.position[0])+1] or "ABCDEFGH"["ABCDEFGH".index(self.position[0])-1])+str(int(self.position[1])-1)) and spotIsOccupied:
+                return True            
             return False
 class Player:
     def __init__(self,color):
@@ -70,12 +78,6 @@ class Board:
     def changeCoordinateSign(self,spot,sign):
         #print spot,sign
         self.board[8-int(spot[1:])][self.board[8].index("["+str(spot[0]).upper()+"]")] = sign
-    def incrementCoordinate(self,spot,direction,increment):
-        alphabet=" ABCDEFGHIJ"
-        if direction.upper()=="R":
-            return alphabet[alphabet.index(spot[0].upper())+increment]+spot[1:]
-        else:
-            return spot[0]+str(int(spot[1:])+increment)
 
     def takeTurns(self):
         while True:
@@ -92,9 +94,10 @@ class Board:
                         if correctPiece[0].upper()=="Y":
                             newPiecePosition=raw_input("Where would you like to move it(ex:a3)?\n->").rstrip("\r").upper()
                             correctPieceMove=raw_input("You have chosen to move your "+self.boardDict[piecePosition].name+" from "+piecePosition+" to "+newPiecePosition+". Is this correct(y/n)?\n->")
-                            if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition):
+                            if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition)):
                                 if newPiecePosition in self.boardDict.keys():
-                                    #self.boardDict[piecePosition].owner.pieces=[item for item in player.pieces if item.position != newPiecePosition]#del  self.boardDict[newPiecePosition]
+                                    if self.boardDict[newPiecePosition].owner==player:
+                                        raise ValueError
                                     self.boardDict[newPiecePosition].owner.pieces.remove(self.boardDict[newPiecePosition])
                                     
                                 self.boardDict[piecePosition].hasMoved=True
@@ -121,30 +124,14 @@ def colorRow(row,rowNum):
     for i in range(1,len(row),2):
         try:
             if (rowNum % 2==0):
-                colorRowList.append(Back.BLACK+row[i]+Style.RESET_ALL)
-                colorRowList.append(Back.WHITE+row[i+1]+Style.RESET_ALL)
-                
-            else:
-            
                 colorRowList.append(Back.WHITE+row[i]+Style.RESET_ALL)
-                colorRowList.append(Back.BLACK+row[i+1]+Style.RESET_ALL)        
+                colorRowList.append(Back.BLACK+row[i+1]+Style.RESET_ALL)
+            else:
+                colorRowList.append(Back.BLACK+row[i]+Style.RESET_ALL)
+                colorRowList.append(Back.WHITE+row[i+1]+Style.RESET_ALL)       
         except IndexError:
             pass
-    """
-    for i in row:
-        if(i=="[x]"):
-            colorRowList.append(Fore.RED+i+Fore.RESET)
-        elif(i=="[+]"):
-            colorRowList.append(Fore.GREEN+i+Fore.RESET)
-        elif(i=="[0]"):
-            colorRowList.append(Fore.YELLOW+i+Fore.RESET)
-        elif(i=="[o]"):
-            colorRowList.append(Fore.BLUE+i+Fore.RESET)
-        elif(i=="[?]"):
-            colorRowList.append(Fore.CYAN+i+Fore.RESET)
-        else:
-            colorRowList.append(Fore.WHITE+i+Fore.RESET)
-    """
+
     return "".join(colorRowList)
 
 def clear():

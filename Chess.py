@@ -70,6 +70,21 @@ class Rook(Piece):
             return True
         return False
 
+class Knight(Piece):
+    def __init__(self,owner,color,position):
+        Piece.__init__(self,owner,color,position)
+        if self.color=="White":
+            self.symbol=Fore.BLUE+" N "
+        else:           
+            self.symbol=Fore.RED+" N "
+        self.name="Knight"
+        self.points=3
+    def isValidMove(self,position,positionSymbol,board):           
+        validMoves=[[1,2],[1,-2],[-1,2],[-1,-2],[2,1],[2,-1],[-2,1],[-2,-1]] #list of moves in terms of [h,v], horizontal movement, vertical movement
+        for move in validMoves:
+            if position=="ABCDEFGH"["ABCDEFGH".index(self.position[0])+move[0]]+str(int(self.position[1])+move[1]):
+                return True
+        return False
 class Player:
                 
     def __init__(self,color):
@@ -78,9 +93,9 @@ class Player:
         self.points=0
         self.capturedPieces=[]
         if self.color=="White":
-            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Rook(self,self.color,"H1")]
+            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
         else:
-            self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Rook(self,self.color,"H8"),Rook(self,self.color,"D1")]
+            self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
 class Board:    
     def __init__(self):
         self.board=[]

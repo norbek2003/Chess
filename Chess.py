@@ -85,6 +85,26 @@ class Knight(Piece):
             if position=="ABCDEFGH"["ABCDEFGH".index(self.position[0])+move[0]]+str(int(self.position[1])+move[1]):
                 return True
         return False
+class Bishop(Piece):
+    def __init__(self,owner,color,position):
+        Piece.__init__(self,owner,color,position)
+        if self.color=="White":
+            self.symbol=Fore.BLUE+" B "
+        else:           
+            self.symbol=Fore.RED+" B "
+        self.name="Bishop"
+        self.points=3
+    def isValidMove(self,position,positionSymbol,board):           
+        direction=[[1],[1]]#increment in [h,v] horizontal, vertical
+        direction[0]=-("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))/abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))
+        direction[1]=-(int(self.position[1])-int(position[1]))/abs(int(self.position[1])-int(position[1]))
+        if abs(int(self.position[1])-int(position[1]))==abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0])):
+            for i in range(1,abs(int(self.position[1])-int(position[1]))):
+                if board.getCoordinateSign("ABCDEFGH"["ABCDEFGH".index(self.position[0])+(i*direction[0])]+str(int(self.position[1])+(i*direction[1])))!="   ":
+                    return False
+            return True
+        return False
+            
 class Player:
                 
     def __init__(self,color):
@@ -93,9 +113,9 @@ class Player:
         self.points=0
         self.capturedPieces=[]
         if self.color=="White":
-            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
+            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Bishop(self,self.color,"C1"),Bishop(self,self.color,"F1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
         else:
-            self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
+            self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Bishop(self,self.color,"C8"),Bishop(self,self.color,"F8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
 class Board:    
     def __init__(self):
         self.board=[]

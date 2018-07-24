@@ -105,15 +105,30 @@ class Bishop(Piece):
             return True
         return False
             
-class Player:
-                
+class Queen(Piece):
+    def __init__(self,owner,color,position):
+        Piece.__init__(self,owner,color,position)
+        if self.color=="White":
+            self.symbol=Fore.BLUE+" Q "
+        else:           
+            self.symbol=Fore.RED+" Q "
+        self.name="Queen"
+        self.points=9
+    def isValidMove(self,position,positionSymbol,board):           
+        rookQueen=Rook(self.owner,self.color,self.position)
+        bishopQueen=Bishop(self.owner,self.color,self.position)
+        if rookQueen.isValidMove(position,"   ",board) or bishopQueen.isValidMove(position,"   ",board):
+            return True
+        return False
+#For king, use board to look through other players pieces to find out if his position is a valid move for them
+class Player:               
     def __init__(self,color):
         self.turnComplete=False
         self.color=color
         self.points=0
         self.capturedPieces=[]
         if self.color=="White":
-            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Bishop(self,self.color,"C1"),Bishop(self,self.color,"F1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
+            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Bishop(self,self.color,"C1"),Queen(self,self.color,"D4"),Bishop(self,self.color,"F1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
         else:
             self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Bishop(self,self.color,"C8"),Bishop(self,self.color,"F8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
 class Board:    

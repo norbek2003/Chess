@@ -10,12 +10,12 @@ class Pawn(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
         if self.color=="White":
-            self.symbol=Fore.BLUE+" p "
+            self.symbol=Fore.BLUE+" P "
         else:           
-            self.symbol=Fore.RED+" p "
+            self.symbol=Fore.RED+" P "
         self.name="Pawn"
         self.points=1
-    def isValidMove(self,position,positionSymbol):           
+    def isValidMove(self,position,positionSymbol,b):           
         spotIsOccupied=False
         if positionSymbol!="   ":
             spotIsOccupied=True
@@ -25,7 +25,7 @@ class Pawn(Piece):
                     return True
             if (position==self.position[0]+str(int(self.position[1])+1)) and not spotIsOccupied:
                 return True       
-            if (position==("ABCDEFGH"["ABCDEFGH".index(self.position[0])+1] or "ABCDEFGH"["ABCDEFGH".index(self.position[0])-1])+str(int(self.position[1])+1)) and spotIsOccupied:
+            if position in ("ABCDEFGH"["ABCDEFGH".index(self.position[0])+1]+str(int(self.position[1])+1),"ABCDEFGH"["ABCDEFGH".index(self.position[0])-1]+str(int(self.position[1])+1)) and spotIsOccupied:
                 return True
             return False
         
@@ -35,17 +35,52 @@ class Pawn(Piece):
                     return True
             if position==self.position[0]+str(int(self.position[1])-1) and not spotIsOccupied:
                 return True      
-            if (position==("ABCDEFGH"["ABCDEFGH".index(self.position[0])+1] or "ABCDEFGH"["ABCDEFGH".index(self.position[0])-1])+str(int(self.position[1])-1)) and spotIsOccupied:
+            #print 
+            if position in ("ABCDEFGH"["ABCDEFGH".index(self.position[0])+1]+str(int(self.position[1])-1),"ABCDEFGH"["ABCDEFGH".index(self.position[0])-1]+str(int(self.position[1])-1)) and spotIsOccupied:
                 return True            
             return False
+class Rook(Piece):
+    def __init__(self,owner,color,position):
+        Piece.__init__(self,owner,color,position)
+        if self.color=="White":
+            self.symbol=Fore.BLUE+" R "
+        else:           
+            self.symbol=Fore.RED+" R "
+        self.name="Rook"
+        self.points=5
+    def isValidMove(self,position,positionSymbol,board):           
+        increment=1
+        if position[1]==self.position[1]:#horizontal
+            if "ABCDEFGH".index(position[0])>"ABCDEFGH".index(self.position[0]):
+                increment=-1            
+            for i in range("ABCDEFGH".index(self.position[0]),"ABCDEFGH".index(position[0]),increment):
+                if board.getCoordinateSign("ABCDEFGH"[i]+position[1])!="   ":
+                    return False
+            
+            return True
+        if position[0]==self.position[0]:#vertical
+            if int(position[1])>int(self.position[1]):
+                increment=-1
+            
+            for i in range(int(position[1]),int(self.position[1]),increment):
+                #print i
+                #raw_input(1)
+                if board.getCoordinateSign(position[0]+str(i))!="   ":
+                    return False 
+            return True
+        return False
+
 class Player:
+                
     def __init__(self,color):
         self.turnComplete=False
         self.color=color
+        self.points=0
+        self.capturedPieces=[]
         if self.color=="White":
-            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2")]
+            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Rook(self,self.color,"H1")]
         else:
-            self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7")]
+            self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Rook(self,self.color,"H8"),Rook(self,self.color,"D1")]
 class Board:    
     def __init__(self):
         self.board=[]
@@ -94,7 +129,7 @@ class Board:
                         if correctPiece[0].upper()=="Y":
                             newPiecePosition=raw_input("Where would you like to move it(ex:a3)?\n->").rstrip("\r").upper()
                             correctPieceMove=raw_input("You have chosen to move your "+self.boardDict[piecePosition].name+" from "+piecePosition+" to "+newPiecePosition+". Is this correct(y/n)?\n->")
-                            if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition)):
+                            if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition),self):
                                 if newPiecePosition in self.boardDict.keys():
                                     if self.boardDict[newPiecePosition].owner==player:
                                         raise ValueError
@@ -109,10 +144,11 @@ class Board:
                         else:
                             raise ValueError
                         
-                    except ValueError:
+                    except (ValueError, KeyError) as e:
+                        #print e
+                       # raw_input(2)
                         pass
-                    except KeyError:
-                        pass
+
                     else:
                         break
                             
@@ -144,6 +180,5 @@ def clear():
 def main():
     init()
     board=Board()
-    board.printBoard()
     board.takeTurns()
 main()

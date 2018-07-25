@@ -210,18 +210,23 @@ class Board:
                     try:
                         clear()
                         self.printBoard()
-                        print player.color +"'s Turn"                        
-                        piecePosition=raw_input("Please choose one of your pieces(ex:a2)\n->").rstrip("\r").upper()
+                        print "\nCaptured Pieces:" 
+                        for p in self.players:
+                            print p.color+" : Captured Pieces = "+str(p.capturedPieces)+" | Points = "+str(p.points)
+                        print "\n"+player.color +"'s Turn!"
+                        piecePosition=raw_input("Please choose one of your pieces(ex:A2)\n->").rstrip("\r").upper()
                         if self.boardDict[piecePosition].color!=player.color:
                             raise ValueError
                         correctPiece=raw_input("You have chosen your "+self.boardDict[piecePosition].name+" at "+piecePosition+". Is this correct(y/n)?\n->")
                         if correctPiece[0].upper()=="Y":
-                            newPiecePosition=raw_input("Where would you like to move it(ex:a3)?\n->").rstrip("\r").upper()
+                            newPiecePosition=raw_input("Where would you like to move it(P.S castling can be done by moving the king ex:G1)?\n->").rstrip("\r").upper()
                             correctPieceMove=raw_input("You have chosen to move your "+self.boardDict[piecePosition].name+" from "+piecePosition+" to "+newPiecePosition+". Is this correct(y/n)?\n->")
                             if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition),self):
                                 if newPiecePosition in self.boardDict.keys():
                                     if self.boardDict[newPiecePosition].owner==player:
                                         raise ValueError
+                                    player.points+=self.boardDict[newPiecePosition].points
+                                    player.capturedPieces.append(self.boardDict[newPiecePosition].symbol[len(self.boardDict[newPiecePosition].symbol)-2])
                                     self.boardDict[newPiecePosition].owner.pieces.remove(self.boardDict[newPiecePosition])
                                     
                                 self.boardDict[piecePosition].hasMoved=True

@@ -1,5 +1,6 @@
 from colorama import Fore, Style, Back, init
 from os import system, name
+
 class Piece:
     def __init__(self,owner,color,position):
         self.color=color
@@ -10,7 +11,7 @@ class Pawn(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
         if self.color=="White":
-            self.symbol=Fore.BLUE+" P "
+            self.symbol=Fore.BLUE+" P "#u"♙"
         else:           
             self.symbol=Fore.RED+" P "
         self.name="Pawn"
@@ -53,12 +54,12 @@ class Rook(Piece):
     def isValidMove(self,position,positionSymbol,board):           
         increment=1
         if position[1]==self.position[1]:#horizontal
-            if "ABCDEFGH".index(position[0])>"ABCDEFGH".index(self.position[0]):
-                increment=-1            
+            if "ABCDEFGH".index(position[0])<"ABCDEFGH".index(self.position[0]):
+                increment=-1         
             for i in range("ABCDEFGH".index(self.position[0]),"ABCDEFGH".index(position[0]),increment):
                 if board.getCoordinateSign("ABCDEFGH"[i]+position[1])!="   ":
-                    return False
-            
+                    if ("ABCDEFGH"[i]+position[1])!=self.position and ("ABCDEFGH"[i]+position[1])!=position:
+                        return False            
             return True
         if position[0]==self.position[0]:#vertical
             if int(position[1])>int(self.position[1]):
@@ -97,15 +98,18 @@ class Bishop(Piece):
         self.name="Bishop"
         self.points=3
     def isValidMove(self,position,positionSymbol,board):           
-        direction=[[1],[1]]#increment in [h,v] horizontal, vertical
-        direction[0]=-("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))/abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))
-        direction[1]=-(int(self.position[1])-int(position[1]))/abs(int(self.position[1])-int(position[1]))
-        if abs(int(self.position[1])-int(position[1]))==abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0])):
-            for i in range(1,abs(int(self.position[1])-int(position[1]))):
-                if board.getCoordinateSign("ABCDEFGH"["ABCDEFGH".index(self.position[0])+(i*direction[0])]+str(int(self.position[1])+(i*direction[1])))!="   ":
-                    return False
-            return True
-        return False
+        try:
+            direction=[1,1]#increment in [h,v] horizontal, vertical
+            direction[0]=-("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))/abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))
+            direction[1]=-(int(self.position[1])-int(position[1]))/abs(int(self.position[1])-int(position[1]))
+            if abs(int(self.position[1])-int(position[1]))==abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0])):
+                for i in range(1,abs(int(self.position[1])-int(position[1]))):
+                    if board.getCoordinateSign("ABCDEFGH"["ABCDEFGH".index(self.position[0])+(i*direction[0])]+str(int(self.position[1])+(i*direction[1])))!="   ":
+                        return False
+                return True
+            return False
+        except ZeroDivisionError:
+            return False
             
 class Queen(Piece):
     def __init__(self,owner,color,position):
@@ -131,6 +135,7 @@ class King(Piece):
             self.symbol=Fore.RED+" K "
         self.name="King"
         self.points=100
+        self.InCheckCurrently=False
     def isValidMove(self,position,positionSymbol,board):           
         inCheck=False
         for player in board.players:
@@ -159,7 +164,17 @@ class King(Piece):
         #g1if (abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))<=1) and (abs(int(self.position[1])-int(position[1]))<=1):
          #   return True
         return False
-#For king, use board to look through other players pieces to find out if his position is a valid move for them
+    def isInCheck(self,board):
+        for player in board.players:
+            if player.color!=self.color:
+                for piece in player.pieces:
+                    try:
+                        if piece.name!="King" and piece.isValidMove(self.position," K ",board):
+                            return True
+                        
+                    except (IndexError,ZeroDivisionError):
+                        pass 
+        return False
 class Player:               
     def __init__(self,color):
         self.turnComplete=False
@@ -167,10 +182,11 @@ class Player:
         self.points=0
         self.capturedPieces=[]
         if self.color=="White":
-            
-            self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Bishop(self,self.color,"C1"),Queen(self,self.color,"D1"),King(self,self.color,"E1"),Bishop(self,self.color,"F1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
+            #self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Bishop(self,self.color,"C1"),Queen(self,self.color,"D1"),King(self,self.color,"E1"),Bishop(self,self.color,"F1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
+            self.pieces=[King(self,self.color,"H5"),Rook(self,self.color,"D8")]
         else:
-            self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Bishop(self,self.color,"C8"),Queen(self,self.color,"D8"),King(self,self.color,"E8"),Bishop(self,self.color,"F8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
+            #self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Bishop(self,self.color,"C8"),Queen(self,self.color,"D8"),King(self,self.color,"E8"),Bishop(self,self.color,"F8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
+            self.pieces=[Rook(self,self.color,"A4"),Rook(self,self.color,"A6"),Queen(self,self.color,"E1"),King(self,self.color,"A1")]
 class Board:    
     def __init__(self):
         self.board=[]
@@ -180,7 +196,7 @@ class Board:
     def printBoard(self):
         for i in range(len(self.board)-1):
             print colorRow(self.board[i],i)
-        print "".join(self.board[8])
+        print "".join(self.board[8]).encode("utf-8")
     def NoTheWorldMustBePeopled(self):#much ado about nothing -benedick
         self.boardDict={}
         self.board=[]
@@ -214,6 +230,7 @@ class Board:
                         for p in self.players:
                             print p.color+" : Captured Pieces = "+str(p.capturedPieces)+" | Points = "+str(p.points)
                         print "\n"+player.color +"'s Turn!"
+                        print "In Check: "+str([piece for piece in player.pieces if piece.name=="King"][0].isInCheck(self))
                         piecePosition=raw_input("Please choose one of your pieces(ex:A2)\n->").rstrip("\r").upper()
                         if self.boardDict[piecePosition].color!=player.color:
                             raise ValueError
@@ -222,9 +239,15 @@ class Board:
                             newPiecePosition=raw_input("Where would you like to move it(P.S castling can be done by moving the king ex:G1)?\n->").rstrip("\r").upper()
                             correctPieceMove=raw_input("You have chosen to move your "+self.boardDict[piecePosition].name+" from "+piecePosition+" to "+newPiecePosition+". Is this correct(y/n)?\n->")
                             if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition),self):
+                                king=[piece for piece in player.pieces if piece.name=="King"][0]
+                                savedPoints=player.points
+                                savedCapturedPieces=player.capturedPieces[:]
+                                capturedPiece=False
                                 if newPiecePosition in self.boardDict.keys():
                                     if self.boardDict[newPiecePosition].owner==player:
                                         raise ValueError
+                                    capturedPiece=True
+                                    savedPiece = self.boardDict[newPiecePosition]
                                     player.points+=self.boardDict[newPiecePosition].points
                                     player.capturedPieces.append(self.boardDict[newPiecePosition].symbol[len(self.boardDict[newPiecePosition].symbol)-2])
                                     self.boardDict[newPiecePosition].owner.pieces.remove(self.boardDict[newPiecePosition])
@@ -232,6 +255,17 @@ class Board:
                                 self.boardDict[piecePosition].hasMoved=True
                                 self.boardDict[piecePosition].position=newPiecePosition
                                 self.NoTheWorldMustBePeopled() 
+
+                                if king.isInCheck(self):
+                                    if capturedPiece:
+                                        player.points=savedPoints
+                                        player.capturedPieces=savedCapturedPieces
+                                        self.boardDict[newPiecePosition].owner.pieces.append(savedPiece)
+                                    self.boardDict[newPiecePosition].hasMoved=False
+                                    self.boardDict[newPiecePosition].position=piecePosition
+                                    self.NoTheWorldMustBePeopled()                                     
+                                    
+                                    raise ValueError
                                 
                             else:
                                 raise ValueError
@@ -239,8 +273,7 @@ class Board:
                             raise ValueError
                         
                     except (ValueError, KeyError) as e:
-                        #print e
-                       # raw_input(2)
+
                         pass
 
                     else:

@@ -132,16 +132,32 @@ class King(Piece):
         self.name="King"
         self.points=100
     def isValidMove(self,position,positionSymbol,board):           
-        if (abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))<=1) and (abs(int(self.position[1])-int(position[1]))<=1):
-            for player in board.players:
-                if player.color!=self.color:
-                    for piece in player.pieces:
-                        try:
-                            if piece.name!="King" and piece.isValidMove(position," K ",board):
-                                return False
-                        except (IndexError,ZeroDivisionError):
-                            pass                         
+        inCheck=False
+        for player in board.players:
+            if player.color!=self.color:
+                for piece in player.pieces:
+                    try:
+                        if piece.name!="King" and piece.isValidMove(position," K ",board):
+                            inCheck=True
+                    except (IndexError,ZeroDivisionError):
+                        pass 
+        if (abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))<=1) and (abs(int(self.position[1])-int(position[1]))<=1) and not inCheck:                    
             return True
+        if position=="C1" and self.color=="White" and not inCheck and not self.hasMoved and not board.boardDict["A1"].hasMoved:
+            board.boardDict["A1"].position="D1"
+            return True
+        if position=="G1" and self.color=="White" and not inCheck and not self.hasMoved and not board.boardDict["H1"].hasMoved:
+            board.boardDict["H1"].position="F1"
+            return True
+        if position=="C8" and self.color=="Black" and not inCheck and not self.hasMoved and not board.boardDict["A8"].hasMoved:
+            board.boardDict["A8"].position="D8"
+            return True
+        if position=="G8" and self.color=="Black" and not inCheck and not self.hasMoved and not board.boardDict["H8"].hasMoved:
+            board.boardDict["H1"].position="F8"
+            return True        
+        
+        #g1if (abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))<=1) and (abs(int(self.position[1])-int(position[1]))<=1):
+         #   return True
         return False
 #For king, use board to look through other players pieces to find out if his position is a valid move for them
 class Player:               
@@ -151,6 +167,7 @@ class Player:
         self.points=0
         self.capturedPieces=[]
         if self.color=="White":
+            
             self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Bishop(self,self.color,"C1"),Queen(self,self.color,"D1"),King(self,self.color,"E1"),Bishop(self,self.color,"F1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
         else:
             self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Bishop(self,self.color,"C8"),Queen(self,self.color,"D8"),King(self,self.color,"E8"),Bishop(self,self.color,"F8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
@@ -158,7 +175,6 @@ class Board:
     def __init__(self):
         self.board=[]
         self.players=[Player("White"),Player("Black")]
-
         self.boardDict={}
         self.NoTheWorldMustBePeopled()
     def printBoard(self):

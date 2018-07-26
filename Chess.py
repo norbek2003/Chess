@@ -331,8 +331,23 @@ def clear():
         _ = system('clear')
       
       
+def printBanner():
+    f = open('banner.txt', 'r')
+    for line in f:
+        colorLine=[]
+        stripLine=line.rstrip("\n")
+        for i in stripLine:
+            if i=="_":
+                colorLine.append(Fore.BLACK+i+Style.RESET_ALL)
+            else: 
+                colorLine.append(Fore.WHITE+i+Style.RESET_ALL)
+        
+        print "".join(colorLine)
+    raw_input("Press enter to continue\n->")
 def main():
-    init()
+    if name == 'nt':
+        init()
+    printBanner()
     board=Board()
     board.takeTurns()
 main()

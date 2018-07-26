@@ -170,17 +170,30 @@ class King(Piece):
                 for piece in player.pieces:
                     try:
                         if piece.name!="King" and piece.isValidMove(self.position," K ",board):
-                            return True
-                        
+                            return True       
                     except (IndexError,ZeroDivisionError):
                         pass 
         return False
+    def inCheckMate(self,board):
+        positions=[letter + number for number in "12345678" for letter in "ABCDEFGH"]
+        
+        for piece in [item for item in self.owner.pieces if item != self]:
+            for position in positions:
+                
+                try:    
+                    if board.tryTurn(self.owner,piece.position,position,self,False,True):
+                        #raw_input(position)
+                        return False
+                except ValueError:
+                    pass
+        return True
 class Player:               
     def __init__(self,color):
         self.turnComplete=False
         self.color=color
         self.points=0
         self.capturedPieces=[]
+        self.AI=False
         if self.color=="White":
             #self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Bishop(self,self.color,"C1"),Queen(self,self.color,"D1"),King(self,self.color,"E1"),Bishop(self,self.color,"F1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
             self.pieces=[King(self,self.color,"H5"),Rook(self,self.color,"D8")]
@@ -189,6 +202,7 @@ class Player:
             self.pieces=[Rook(self,self.color,"A4"),Rook(self,self.color,"A6"),Queen(self,self.color,"E1"),King(self,self.color,"A1")]
 class Board:    
     def __init__(self):
+        self.gameWon=False
         self.board=[]
         self.players=[Player("White"),Player("Black")]
         self.boardDict={}
@@ -220,7 +234,7 @@ class Board:
         self.board[8-int(spot[1:])][self.board[8].index("["+str(spot[0]).upper()+"]")] = sign
 
     def takeTurns(self):
-        while True:
+        while self.gameWon==False:
             for player in self.players:
                 while True:
                     try:
@@ -231,6 +245,13 @@ class Board:
                             print p.color+" : Captured Pieces = "+str(p.capturedPieces)+" | Points = "+str(p.points)
                         print "\n"+player.color +"'s Turn!"
                         print "In Check: "+str([piece for piece in player.pieces if piece.name=="King"][0].isInCheck(self))
+                        king=[piece for piece in player.pieces if piece.name=="King"][0]
+                                
+                        if king.isInCheck(self) and king.inCheckMate(self):
+                            otherPlayer=[p for p in self.players if p !=player][0]
+                            print "\n ***************************\n * Checkmate! "+otherPlayer.color+" wins ! *\n ***************************"
+                            raw_input("\nPress enter to continue!\n->")
+                            self.gameWon=True
                         piecePosition=raw_input("Please choose one of your pieces(ex:A2)\n->").rstrip("\r").upper()
                         if self.boardDict[piecePosition].color!=player.color:
                             raise ValueError
@@ -239,43 +260,15 @@ class Board:
                             newPiecePosition=raw_input("Where would you like to move it(P.S castling can be done by moving the king ex:G1)?\n->").rstrip("\r").upper()
                             correctPieceMove=raw_input("You have chosen to move your "+self.boardDict[piecePosition].name+" from "+piecePosition+" to "+newPiecePosition+". Is this correct(y/n)?\n->")
                             if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition),self):
-                                king=[piece for piece in player.pieces if piece.name=="King"][0]
-                                savedPoints=player.points
-                                savedCapturedPieces=player.capturedPieces[:]
-                                capturedPiece=False
-                                if newPiecePosition in self.boardDict.keys():
-                                    if self.boardDict[newPiecePosition].owner==player:
-                                        raise ValueError
-                                    capturedPiece=True
-                                    savedPiece = self.boardDict[newPiecePosition]
-                                    player.points+=self.boardDict[newPiecePosition].points
-                                    player.capturedPieces.append(self.boardDict[newPiecePosition].symbol[len(self.boardDict[newPiecePosition].symbol)-2])
-                                    self.boardDict[newPiecePosition].owner.pieces.remove(self.boardDict[newPiecePosition])
-                                    
-                                self.boardDict[piecePosition].hasMoved=True
-                                self.boardDict[piecePosition].position=newPiecePosition
-                                self.NoTheWorldMustBePeopled() 
-
-                                if king.isInCheck(self):
-                                    if capturedPiece:
-                                        player.points=savedPoints
-                                        player.capturedPieces=savedCapturedPieces
-                                        self.boardDict[newPiecePosition].owner.pieces.append(savedPiece)
-                                    self.boardDict[newPiecePosition].hasMoved=False
-                                    self.boardDict[newPiecePosition].position=piecePosition
-                                    self.NoTheWorldMustBePeopled()                                     
-                                    
-                                    raise ValueError
                                 
+                                self.tryTurn(player,piecePosition,newPiecePosition,king,True,False)
+                              
                             else:
                                 raise ValueError
                         else:
                             raise ValueError
-                        
                     except (ValueError, KeyError) as e:
-
                         pass
-
                     else:
                         break
                             
@@ -283,6 +276,38 @@ class Board:
                 player.turnComplete=False        
     def rotateBoard(self):
         pass
+    def tryTurn(self,player,piecePosition,newPiecePosition,king,check4Check,resetMoves):
+        savedPoints=player.points
+        savedCapturedPieces=player.capturedPieces[:]
+        capturedPiece=False
+        if newPiecePosition in self.boardDict.keys() and self.boardDict[newPiecePosition].name == "King":
+            raise ValueError
+        if newPiecePosition in self.boardDict.keys() and self.boardDict[newPiecePosition].name != "King":
+            if self.boardDict[newPiecePosition].owner==player:
+                raise ValueError
+            capturedPiece=True
+            savedPiece = self.boardDict[newPiecePosition]
+            player.points+=self.boardDict[newPiecePosition].points
+            player.capturedPieces.append(self.boardDict[newPiecePosition].symbol[len(self.boardDict[newPiecePosition].symbol)-2])
+            self.boardDict[newPiecePosition].owner.pieces.remove(self.boardDict[newPiecePosition])
+            
+        self.boardDict[piecePosition].hasMoved=True
+        self.boardDict[piecePosition].position=newPiecePosition
+        self.NoTheWorldMustBePeopled() 
+
+        if king.isInCheck(self) and check4Check:
+            if capturedPiece:
+                player.points=savedPoints
+                player.capturedPieces=savedCapturedPieces
+                self.boardDict[newPiecePosition].owner.pieces.append(savedPiece)
+            self.boardDict[newPiecePosition].hasMoved=False
+            self.boardDict[newPiecePosition].position=piecePosition
+            self.NoTheWorldMustBePeopled()      
+            raise ValueError
+        if resetMoves:
+            self.boardDict[newPiecePosition].position=piecePosition   
+            self.NoTheWorldMustBePeopled() 
+        return True
 def colorRow(row,rowNum):
     colorRowList=[]
     colorRowList.append(row[0])

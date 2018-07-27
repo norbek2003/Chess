@@ -342,6 +342,8 @@ class Board:
     def rotateBoard(self):
         pass
     def tryTurn(self,player,piecePosition,newPiecePosition,king,check4Check,resetMoves):
+        if piecePosition=="G8":
+            print 1
         otherPlayer=[p for p in self.players if p!=player][0]
         otherKing=[p for p in otherPlayer.pieces if p.name=="King"][0]
         savedPoints=player.points

@@ -1,5 +1,6 @@
 from colorama import Fore, Style, Back, init
 from os import system, name
+import random
 #Take turn calls itself recursion times, then returns outcome
 #resizing cmd screws with colorama board
 class Piece:
@@ -8,6 +9,19 @@ class Piece:
         self.position=position
         self.hasMoved=False
         self.owner=owner
+    def controlOrInCenter(self,board):
+        centerTier2=['D4', 'E4', 'D5', 'E5']
+        centerTier1=['C3', 'D3', 'E3', 'F3', 'C6', 'D6', 'E6', 'F6',"C4","C5","F4","F5"]
+        centerData={"ControlCenterTier2":False,"ControlCenterTier1":False,"InCenterTier2":(self.position in centerTier2),"InCenterTier1":(self.position in centerTier1)}
+        for pos in centerTier2:
+            if self.isValidMove(pos," x ",board):
+                centerData["ControlCenterTier2"]=True
+                break
+        for pos in centerTier1:
+            if self.isValidMove(pos," x ",board):
+                centerData["ControlCenterTier1"]=True
+                break
+        return centerData    
 class Pawn(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
@@ -190,7 +204,6 @@ class King(Piece):
         return True
 class Player:               
     def __init__(self,color,human):
-        self.turnComplete=False
         self.color=color
         self.points=0
         self.capturedPieces=[]
@@ -209,21 +222,28 @@ class Player:
         for piece in self.pieces:
             pointsArray[piece.position]={}
             for position in positions:
-                if piece.isValidMove(position,"   ",board):
-                    #self,player,piecePosition,newPiecePosition,king,check4Check,resetMoves
-                    try:
+                try:
+                    if piece.isValidMove(position,"   ",board):                    
                         turnResults=board.tryTurn(self,piece.position,position,[p for p in self.pieces if p.name=="King"][0],False,True)[1]
-                        if turnResults["otherKingInCheck"]!=False or turnResults["pointsGained"]!=0:
-                            pointsArray[piece.position][position]=turnResults
-                    except ValueError:
-                        pass
-            if pointsArray[piece.position]=={}:
-                del pointsArray[piece.position]
-        #print pointsArray
+                        #if turnResults["otherKingInCheck"]!=False or turnResults["pointsGained"]!=0:
+                        pointsArray[piece.position][position]=turnResults
+                except (ValueError,IndexError,KeyError):
+                    pass
+            
+            try:
+                if not bool(pointsArray[piece.position]):
+                    del pointsArray[piece.position]
+            except KeyError:
+                pass
+        #print 2
         for piece in pointsArray:
-            maxPointsArray.append({"piece":piece,"move":max(pointsArray[piece], key=lambda v: pointsArray[piece][v]['pointsGained']),"pointsGained":max(move["pointsGained"] for move in pointsArray[piece].values())})
-        #print max(maxPointsArray, key=lambda d: d["pointsGained"])["move"]
-        board.tryTurn(self,max(maxPointsArray, key=lambda d: d["pointsGained"])["piece"],max(maxPointsArray, key=lambda d: d["pointsGained"])["move"],[p for p in self.pieces if p.name=="King"][0],False,False)
+            maxPointsArray.append({"piece":piece,"move":max(pointsArray[piece], key=lambda v: getRawMoveScore(pointsArray[piece][v])),"rawPoints":max(getRawMoveScore(move) for move in pointsArray[piece].values())})
+        piece= max(maxPointsArray, key=lambda d: d["rawPoints"])["piece"]
+        position=max(maxPointsArray, key=lambda d: d["rawPoints"])["move"]
+
+        board.tryTurn(self,piece,position,[p for p in self.pieces if p.name=="King"][0],False,False)
+        print "a"
+      
 class Board:    
     def __init__(self):
         self.gameWon=False
@@ -319,7 +339,6 @@ class Board:
                                 
                 else:
                     player.findBestMove(self)
-                player.turnComplete=False        
     def rotateBoard(self):
         pass
     def tryTurn(self,player,piecePosition,newPiecePosition,king,check4Check,resetMoves):
@@ -342,7 +361,7 @@ class Board:
         self.boardDict[piecePosition].hasMoved=True
         self.boardDict[piecePosition].position=newPiecePosition
         self.NoTheWorldMustBePeopled() 
-        turnData={"pointsGained":(player.points-savedPoints),"otherKingInCheck":otherKing.isInCheck(self)}
+        turnData={"pointsGained":(player.points-savedPoints),"otherKingInCheck":otherKing.isInCheck(self),"centerData":self.boardDict[newPiecePosition].controlOrInCenter(self)}
         if king.isInCheck(self) and check4Check:
             if capturedPiece:
                 player.points=savedPoints
@@ -355,7 +374,17 @@ class Board:
         if resetMoves:
             self.boardDict[newPiecePosition].position=piecePosition   
             self.NoTheWorldMustBePeopled() 
+        else:
+            raw_input(piecePosition+"  "+newPiecePosition)
         return [True,turnData]
+def getRawMoveScore(move):
+    rawPoints=move["pointsGained"]
+    for info in move["centerData"]:
+        if move["centerData"][info]:
+            rawPoints+=3
+    if move["otherKingInCheck"]:
+        rawPoints+=3
+    return rawPoints
 def colorRow(row,rowNum):
     colorRowList=[]
     colorRowList.append(row[0])

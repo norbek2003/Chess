@@ -1,6 +1,7 @@
 from colorama import Fore, Style, Back, init
 from os import system, name
-
+#Take turn calls itself recursion times, then returns outcome
+#resizing cmd screws with colorama board
 class Piece:
     def __init__(self,owner,color,position):
         self.color=color
@@ -16,7 +17,7 @@ class Pawn(Piece):
             self.symbol=Fore.RED+" P "
         self.name="Pawn"
         self.points=1
-    def isValidMove(self,position,positionSymbol,b):           
+    def isValidMove(self,position,positionSymbol,board):           
         spotIsOccupied=False
         if positionSymbol!="   ":
             spotIsOccupied=True
@@ -27,8 +28,8 @@ class Pawn(Piece):
             if (position==self.position[0]+str(int(self.position[1])+1)) and not spotIsOccupied:
                 return True       
             if position in ("ABCDEFGH"["ABCDEFGH".index(self.position[0])+1]+str(int(self.position[1])+1),"ABCDEFGH"["ABCDEFGH".index(self.position[0])-1]+str(int(self.position[1])+1)) and spotIsOccupied:
-                return True
-            return False
+                return True,# board.boardDict[]]
+            return False 
         
         else:
             if self.hasMoved==False:
@@ -181,32 +182,74 @@ class King(Piece):
             for position in positions:
                 
                 try:    
-                    if board.tryTurn(self.owner,piece.position,position,self,False,True):
+                    if board.tryTurn(self.owner,piece.position,position,self,False,True)[0]:
                         #raw_input(position)
                         return False
                 except ValueError:
                     pass
         return True
 class Player:               
-    def __init__(self,color):
+    def __init__(self,color,human):
         self.turnComplete=False
         self.color=color
         self.points=0
         self.capturedPieces=[]
-        self.AI=False
+        self.AI=not human  
         if self.color=="White":
             self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Bishop(self,self.color,"C1"),Queen(self,self.color,"D1"),King(self,self.color,"E1"),Bishop(self,self.color,"F1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
-            #self.pieces=[King(self,self.color,"H5"),Rook(self,self.color,"D8")]
+            #self.pieces=[King(self,self.color,"H5"),Rook(self,self.color,"D8"),Pawn(self,self.color,"D1")]
         else:
             self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Bishop(self,self.color,"C8"),Queen(self,self.color,"D8"),King(self,self.color,"E8"),Bishop(self,self.color,"F8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
             #self.pieces=[Rook(self,self.color,"A4"),Rook(self,self.color,"A6"),Queen(self,self.color,"E1"),King(self,self.color,"A1")]
+    def findBestMove(self,board):
+        positions=[letter + number for number in "12345678" for letter in "ABCDEFGH"]        
+        pointsArray={}
+        maxPointsArray=[]
+        bestMove=[]#piece,moveTo
+        for piece in self.pieces:
+            pointsArray[piece.position]={}
+            for position in positions:
+                if piece.isValidMove(position,"   ",board):
+                    #self,player,piecePosition,newPiecePosition,king,check4Check,resetMoves
+                    try:
+                        turnResults=board.tryTurn(self,piece.position,position,[p for p in self.pieces if p.name=="King"][0],False,True)[1]
+                        if turnResults["otherKingInCheck"]!=False or turnResults["pointsGained"]!=0:
+                            pointsArray[piece.position][position]=turnResults
+                    except ValueError:
+                        pass
+            if pointsArray[piece.position]=={}:
+                del pointsArray[piece.position]
+        #print pointsArray
+        for piece in pointsArray:
+            maxPointsArray.append({"piece":piece,"move":max(pointsArray[piece], key=lambda v: pointsArray[piece][v]['pointsGained']),"pointsGained":max(move["pointsGained"] for move in pointsArray[piece].values())})
+        #print max(maxPointsArray, key=lambda d: d["pointsGained"])["move"]
+        board.tryTurn(self,max(maxPointsArray, key=lambda d: d["pointsGained"])["piece"],max(maxPointsArray, key=lambda d: d["pointsGained"])["move"],[p for p in self.pieces if p.name=="King"][0],False,False)
 class Board:    
     def __init__(self):
         self.gameWon=False
         self.board=[]
-        self.players=[Player("White"),Player("Black")]
+        self.players=[]
         self.boardDict={}
+        self.setPreferences()
         self.NoTheWorldMustBePeopled()
+    def setPreferences(self):
+        print "Please choose a play style: \n[1]  Player vs Player\n[2]  Player(White) vs AI\n[3]  Player(Black) vs AI"
+        while True:
+            try:
+                pref=raw_input("\n->")
+                if int(pref) not in [1,2,3]:
+                    raise ValueError
+                if int(pref)==1:
+                    self.players=[Player("White",True),Player("Black",True)]
+                elif int(pref)==2:
+                    self.players=[Player("White",True),Player("Black",False)]
+                else:
+                    self.players=[Player("White",False),Player("Black",True)]
+            except ValueError:
+                pass
+            else:
+                break
+        #raw_input("Press enter to continue\n->")
     def printBoard(self):
         for i in range(len(self.board)-1):
             print colorRow(self.board[i],i)
@@ -236,47 +279,52 @@ class Board:
     def takeTurns(self):
         while self.gameWon==False:
             for player in self.players:
-                while True:
-                    try:
-                        clear()
-                        self.printBoard()
-                        print "\nCaptured Pieces:" 
-                        for p in self.players:
-                            print p.color+" : Captured Pieces = "+str(p.capturedPieces)+" | Points = "+str(p.points)
-                        print "\n"+player.color +"'s Turn!"
-                        print "In Check: "+str([piece for piece in player.pieces if piece.name=="King"][0].isInCheck(self))
-                        king=[piece for piece in player.pieces if piece.name=="King"][0]
-                                
-                        if king.isInCheck(self) and king.inCheckMate(self):
-                            otherPlayer=[p for p in self.players if p !=player][0]
-                            print "\n ***************************\n * Checkmate! "+otherPlayer.color+" wins ! *\n ***************************"
-                            raw_input("\nPress enter to continue!\n->")
-                            self.gameWon=True
-                        piecePosition=raw_input("Please choose one of your pieces(ex:A2)\n->").rstrip("\r").upper()
-                        if self.boardDict[piecePosition].color!=player.color:
-                            raise ValueError
-                        correctPiece=raw_input("You have chosen your "+self.boardDict[piecePosition].name+" at "+piecePosition+". Is this correct(y/n)?\n->")
-                        if correctPiece[0].upper()=="Y":
-                            newPiecePosition=raw_input("Where would you like to move it?\n->").rstrip("\r").upper()
-                            correctPieceMove=raw_input("You have chosen to move your "+self.boardDict[piecePosition].name+" from "+piecePosition+" to "+newPiecePosition+". Is this correct(y/n)?\n->")
-                            if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition),self):
-                                
-                                self.tryTurn(player,piecePosition,newPiecePosition,king,True,False)
-                              
+                if player.AI==False:
+                    while self.gameWon==False:
+                        try:
+                            clear()
+                            self.printBoard()
+                            print "\nCaptured Pieces:" 
+                            for p in self.players:
+                                print p.color+" : Captured Pieces = "+str(p.capturedPieces)+" | Points = "+str(p.points)
+                            print "\n"+player.color +"'s Turn!"
+                            print "In Check: "+str([piece for piece in player.pieces if piece.name=="King"][0].isInCheck(self))
+                            king=[piece for piece in player.pieces if piece.name=="King"][0]
+                                    
+                            if king.isInCheck(self) and king.inCheckMate(self):
+                                otherPlayer=[p for p in self.players if p !=player][0]
+                                print "\n ***************************\n * Checkmate! "+otherPlayer.color+" wins ! *\n ***************************"
+                                raw_input("\nPress enter to continue!\n->")
+                                self.gameWon=True
+                                break
+                            piecePosition=raw_input("Please choose one of your pieces(ex:A2)\n->").rstrip("\r").upper()
+                            if self.boardDict[piecePosition].color!=player.color:
+                                raise ValueError
+                            correctPiece=raw_input("You have chosen your "+self.boardDict[piecePosition].name+" at "+piecePosition+". Is this correct(y/n)?\n->")
+                            if correctPiece[0].upper()=="Y":
+                                newPiecePosition=raw_input("Where would you like to move it?\n->").rstrip("\r").upper()
+                                correctPieceMove=raw_input("You have chosen to move your "+self.boardDict[piecePosition].name+" from "+piecePosition+" to "+newPiecePosition+". Is this correct(y/n)?\n->")
+                                if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition),self):
+                                    
+                                    self.tryTurn(player,piecePosition,newPiecePosition,king,True,False)
+                                  
+                                else:
+                                    raise ValueError
                             else:
                                 raise ValueError
+                        except (ValueError, KeyError) as e:
+                            pass
                         else:
-                            raise ValueError
-                    except (ValueError, KeyError) as e:
-                        pass
-                    else:
-                        break
-                            
-                            
+                            break
+                                
+                else:
+                    player.findBestMove(self)
                 player.turnComplete=False        
     def rotateBoard(self):
         pass
     def tryTurn(self,player,piecePosition,newPiecePosition,king,check4Check,resetMoves):
+        otherPlayer=[p for p in self.players if p!=player][0]
+        otherKing=[p for p in otherPlayer.pieces if p.name=="King"][0]
         savedPoints=player.points
         savedCapturedPieces=player.capturedPieces[:]
         capturedPiece=False
@@ -294,7 +342,7 @@ class Board:
         self.boardDict[piecePosition].hasMoved=True
         self.boardDict[piecePosition].position=newPiecePosition
         self.NoTheWorldMustBePeopled() 
-
+        turnData={"pointsGained":(player.points-savedPoints),"otherKingInCheck":otherKing.isInCheck(self)}
         if king.isInCheck(self) and check4Check:
             if capturedPiece:
                 player.points=savedPoints
@@ -307,7 +355,7 @@ class Board:
         if resetMoves:
             self.boardDict[newPiecePosition].position=piecePosition   
             self.NoTheWorldMustBePeopled() 
-        return True
+        return [True,turnData]
 def colorRow(row,rowNum):
     colorRowList=[]
     colorRowList.append(row[0])
@@ -343,7 +391,7 @@ def printBanner():
                 colorLine.append(Fore.WHITE+i+Style.RESET_ALL)
         
         print "".join(colorLine)
-    raw_input("Press enter to continue\n->")
+    
 def main():
     if name == 'nt':
         init()

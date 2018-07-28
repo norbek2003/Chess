@@ -3,6 +3,8 @@ from os import system, name
 import random
 #Take turn calls itself recursion times, then returns outcome
 #resizing cmd screws with colorama board
+whiteColor=Fore.BLUE
+blackColor=Fore.RED
 class Piece:
     def __init__(self,owner,color,position):
         self.color=color
@@ -26,9 +28,9 @@ class Pawn(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
         if self.color=="White":
-            self.symbol=Fore.BLUE+" P "#u"♙"
+            self.symbol=whiteColor+" P "
         else:           
-            self.symbol=Fore.RED+" P "
+            self.symbol=blackColor+" P "
         self.name="Pawn"
         self.points=1
     def isValidMove(self,position,positionSymbol,board):           
@@ -61,9 +63,9 @@ class Rook(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
         if self.color=="White":
-            self.symbol=Fore.BLUE+" R "
+            self.symbol=whiteColor+" R "
         else:           
-            self.symbol=Fore.RED+" R "
+            self.symbol=blackColor+" R "
         self.name="Rook"
         self.points=5
     def isValidMove(self,position,positionSymbol,board):           
@@ -92,24 +94,25 @@ class Knight(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
         if self.color=="White":
-            self.symbol=Fore.BLUE+" N "
+            self.symbol=whiteColor+" N "
         else:           
-            self.symbol=Fore.RED+" N "
+            self.symbol=blackColor+" N "
         self.name="Knight"
         self.points=3
     def isValidMove(self,position,positionSymbol,board):           
-        validMoves=[[1,2],[1,-2],[-1,2],[-1,-2],[2,1],[2,-1],[-2,1],[-2,-1]] #list of moves in terms of [h,v], horizontal movement, vertical movement
-        for move in validMoves:
-            if position=="ABCDEFGH"["ABCDEFGH".index(self.position[0])+move[0]]+str(int(self.position[1])+move[1]):
-                return True
+        if abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))==1 and abs(int(self.position[1])-int(position[1]))==2:
+            return True
+        if abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))==2 and abs(int(self.position[1])-int(position[1]))==1:
+            return True
         return False
+
 class Bishop(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
         if self.color=="White":
-            self.symbol=Fore.BLUE+" B "
+            self.symbol=whiteColor+" B "
         else:           
-            self.symbol=Fore.RED+" B "
+            self.symbol=blackColor+" B "
         self.name="Bishop"
         self.points=3
     def isValidMove(self,position,positionSymbol,board):           
@@ -130,9 +133,9 @@ class Queen(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
         if self.color=="White":
-            self.symbol=Fore.BLUE+" Q "
+            self.symbol=whiteColor+" Q "
         else:           
-            self.symbol=Fore.RED+" Q "
+            self.symbol=blackColor+" Q "
         self.name="Queen"
         self.points=9
     def isValidMove(self,position,positionSymbol,board):           
@@ -145,9 +148,9 @@ class King(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
         if self.color=="White":
-            self.symbol=Fore.BLUE+" K "
+            self.symbol=whiteColor+" K "
         else:           
-            self.symbol=Fore.RED+" K "
+            self.symbol=blackColor+" K "
         self.name="King"
         self.points=100
         self.InCheckCurrently=False
@@ -203,7 +206,7 @@ class King(Piece):
                     pass
         return True
 class Player:               
-    def __init__(self,color,human):
+    def __init__(self,board,color,human):
         self.color=color
         self.points=0
         self.capturedPieces=[]
@@ -214,6 +217,9 @@ class Player:
         else:
             self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Bishop(self,self.color,"C8"),Queen(self,self.color,"D8"),King(self,self.color,"E8"),Bishop(self,self.color,"F8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
             #self.pieces=[Rook(self,self.color,"A4"),Rook(self,self.color,"A6"),Queen(self,self.color,"E1"),King(self,self.color,"A1")]
+        self.king=[p for p in self.pieces if p.name=="King"][0]
+    def loadOtherPlayer(self,board):
+        self.otherPlayer=[p for p in board.players if p!=self][0]
     def findBestMove(self,board):
         positions=[letter + number for number in "12345678" for letter in "ABCDEFGH"]        
         pointsArray={}
@@ -224,10 +230,15 @@ class Player:
             for position in positions:
                 try:
                     if piece.isValidMove(position,"   ",board):                    
-                        turnResults=board.tryTurn(self,piece.position,position,[p for p in self.pieces if p.name=="King"][0],False,True)[1]
+                        #clear()
+                        #board.printBoard()
+                        turnResults=board.tryTurn(self,piece.position,position,self.king,False,True)[1]
+                        
+                        #board.printBoard()
+                        raw_input(piece.position + "   "+ position )
                         #if turnResults["otherKingInCheck"]!=False or turnResults["pointsGained"]!=0:
                         pointsArray[piece.position][position]=turnResults
-                except (ValueError,IndexError,KeyError):
+                except (ValueError,KeyError):
                     pass
             
             try:
@@ -242,6 +253,9 @@ class Player:
         position=max(maxPointsArray, key=lambda d: d["rawPoints"])["move"]
 
         board.tryTurn(self,piece,position,[p for p in self.pieces if p.name=="King"][0],False,False)
+        #clear()
+        #board.printBoard()
+        
         print "a"
       
 class Board:    
@@ -260,11 +274,13 @@ class Board:
                 if int(pref) not in [1,2,3]:
                     raise ValueError
                 if int(pref)==1:
-                    self.players=[Player("White",True),Player("Black",True)]
+                    self.players=[Player(self,"White",True),Player(self,"Black",True)]
                 elif int(pref)==2:
-                    self.players=[Player("White",True),Player("Black",False)]
+                    self.players=[Player(self,"White",True),Player(self,"Black",False)]
                 else:
-                    self.players=[Player("White",False),Player("Black",True)]
+                    self.players=[Player(self,"White",False),Player(self,"Black",True)]
+                for player in self.players:
+                    player.loadOtherPlayer(self)
             except ValueError:
                 pass
             else:
@@ -325,9 +341,14 @@ class Board:
                                 newPiecePosition=raw_input("Where would you like to move it?\n->").rstrip("\r").upper()
                                 correctPieceMove=raw_input("You have chosen to move your "+self.boardDict[piecePosition].name+" from "+piecePosition+" to "+newPiecePosition+". Is this correct(y/n)?\n->")
                                 if correctPieceMove[0].upper()=="Y" and self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition),self):
-                                    
+                                    raw_input(str(self.boardDict[piecePosition].isValidMove(newPiecePosition,self.getCoordinateSign(newPiecePosition),self)))
                                     self.tryTurn(player,piecePosition,newPiecePosition,king,True,False)
-                                  
+                                    #clear()
+                                    #self.printBoard()
+                                    #self.tryTurn(player.otherPlayer,"D7","D6",king,True,False)
+                                    #self.printBoard()
+                                    #raw_input("next->")
+                                    #clear()
                                 else:
                                     raise ValueError
                             else:
@@ -343,7 +364,9 @@ class Board:
         pass
     def tryTurn(self,player,piecePosition,newPiecePosition,king,check4Check,resetMoves):
         if piecePosition=="G8":
-            print 1
+            pass
+            #raw_input("G8 " + newPiecePosition + str(resetMoves))
+            #raise ValueError
         otherPlayer=[p for p in self.players if p!=player][0]
         otherKing=[p for p in otherPlayer.pieces if p.name=="King"][0]
         savedPoints=player.points
@@ -353,6 +376,7 @@ class Board:
             raise ValueError
         if newPiecePosition in self.boardDict.keys() and self.boardDict[newPiecePosition].name != "King":
             if self.boardDict[newPiecePosition].owner==player:
+                raw_input(piecePosition+" "+newPiecePosition)
                 raise ValueError
             capturedPiece=True
             savedPiece = self.boardDict[newPiecePosition]
@@ -374,6 +398,7 @@ class Board:
             self.NoTheWorldMustBePeopled()      
             raise ValueError
         if resetMoves:
+            #raw_input(piecePosition+"  "+newPiecePosition)
             self.boardDict[newPiecePosition].position=piecePosition   
             self.NoTheWorldMustBePeopled() 
         else:

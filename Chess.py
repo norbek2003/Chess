@@ -24,6 +24,8 @@ class Piece:
                 centerData["ControlCenterTier1"]=True
                 break
         return centerData    
+    def movePiece(self,position):
+        self.position=position
 class Pawn(Piece):
     def __init__(self,owner,color,position):
         Piece.__init__(self,owner,color,position)
@@ -77,6 +79,7 @@ class Rook(Piece):
                 if board.getCoordinateSign("ABCDEFGH"[i]+position[1])!="   ":
                     if ("ABCDEFGH"[i]+position[1])!=self.position and ("ABCDEFGH"[i]+position[1])!=position:
                         return False            
+            #raw_input(self.position+" "+position)
             return True
         if position[0]==self.position[0]:#vertical
             if int(position[1])>int(self.position[1]):
@@ -156,32 +159,49 @@ class King(Piece):
         self.InCheckCurrently=False
     def isValidMove(self,position,positionSymbol,board):           
         inCheck=False
-        for player in board.players:
-            if player.color!=self.color:
-                for piece in player.pieces:
-                    try:
-                        if piece.name!="King" and piece.isValidMove(position," K ",board):
-                            inCheck=True
-                    except (IndexError,ZeroDivisionError):
-                        pass 
+        for piece in self.owner.otherPlayer.pieces:
+            try:
+                if piece.name!="King" and piece.isValidMove(position," K ",board):
+                    inCheck=True
+            except (IndexError,ZeroDivisionError):
+                pass 
         if (abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))<=1) and (abs(int(self.position[1])-int(position[1]))<=1) and not inCheck:                    
             return True
+        
         if position=="C1" and self.color=="White" and not inCheck and not self.hasMoved and not board.boardDict["A1"].hasMoved:
-            board.boardDict["A1"].position="D1"
+           # board.boardDict["A1"].position="D1"
             return True
         if position=="G1" and self.color=="White" and not inCheck and not self.hasMoved and not board.boardDict["H1"].hasMoved:
-            board.boardDict["H1"].position="F1"
+            #board.boardDict["H1"].position="F1"
             return True
         if position=="C8" and self.color=="Black" and not inCheck and not self.hasMoved and not board.boardDict["A8"].hasMoved:
-            board.boardDict["A8"].position="D8"
+            #board.boardDict["A8"].position="D8"
             return True
         if position=="G8" and self.color=="Black" and not inCheck and not self.hasMoved and not board.boardDict["H8"].hasMoved:
-            board.boardDict["H1"].position="F8"
+            #board.boardDict["H8"].position="F8"
             return True        
         
         #g1if (abs("ABCDEFGH".index(self.position[0])-"ABCDEFGH".index(position[0]))<=1) and (abs(int(self.position[1])-int(position[1]))<=1):
          #   return True
         return False
+    def movePiece(self,position,board):
+        inCheck=False
+        for piece in self.owner.otherPlayer.pieces:
+            try:
+                if piece.name!="King" and piece.isValidMove(position," K ",board):
+                    inCheck=True
+            except (IndexError,ZeroDivisionError):
+                pass         
+        if position=="C1" and self.color=="White" and not inCheck and not self.hasMoved and not board.boardDict["A1"].hasMoved and board.boardDict["A1"].isValidMove("D1","   ",board):
+            board.boardDict["A1"].movePiece("D1")#.position="D1"
+        if position=="G1" and self.color=="White" and not inCheck and not self.hasMoved and not board.boardDict["H1"].hasMoved and board.boardDict["H1"].isValidMove("F1","   ",board):
+            board.boardDict["H1"].movePiece("F1")#position="F1"
+        if position=="C8" and self.color=="Black" and not inCheck and not self.hasMoved and not board.boardDict["A8"].hasMoved and board.boardDict["A8"].isValidMove("D8","   ",board):
+            board.boardDict["A8"].movePiece("D8")#position="D8"
+        if position=="G8" and self.color=="Black" and not inCheck and not self.hasMoved and not board.boardDict["H8"].hasMoved and board.boardDict["H8"].isValidMove("F8","   ",board):
+            board.boardDict["H8"].movePiece("F8")#position="F8"
+        self.position=position
+    
     def isInCheck(self,board):
         for player in board.players:
             if player.color!=self.color:
@@ -213,6 +233,8 @@ class Player:
         self.AI=not human  
         if self.color=="White":
             self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),Knight(self,self.color,"B1"),Bishop(self,self.color,"C1"),Queen(self,self.color,"D1"),King(self,self.color,"E1"),Bishop(self,self.color,"F1"),Knight(self,self.color,"G1"),Rook(self,self.color,"H1")]
+            #self.pieces=[Pawn(self,self.color,"A2"),Pawn(self,self.color,"B2"),Pawn(self,self.color,"C2"),Pawn(self,self.color,"D2"),Pawn(self,self.color,"E2"),Pawn(self,self.color,"F2"),Pawn(self,self.color,"G2"),Pawn(self,self.color,"H2"),Rook(self,self.color,"A1"),King(self,self.color,"E1"),Rook(self,self.color,"H1")]
+            
             #self.pieces=[King(self,self.color,"H5"),Rook(self,self.color,"D8"),Pawn(self,self.color,"D1")]
         else:
             self.pieces=[Pawn(self,self.color,"A7"),Pawn(self,self.color,"B7"),Pawn(self,self.color,"C7"),Pawn(self,self.color,"D7"),Pawn(self,self.color,"E7"),Pawn(self,self.color,"F7"),Pawn(self,self.color,"G7"),Pawn(self,self.color,"H7"),Rook(self,self.color,"A8"),Knight(self,self.color,"B8"),Bishop(self,self.color,"C8"),Queen(self,self.color,"D8"),King(self,self.color,"E8"),Bishop(self,self.color,"F8"),Knight(self,self.color,"G8"),Rook(self,self.color,"H8")]
@@ -235,7 +257,7 @@ class Player:
                         turnResults=board.tryTurn(self,piece.position,position,self.king,False,True)[1]
                         
                         #board.printBoard()
-                        raw_input(piece.position + "   "+ position )
+                        #raw_input(piece.position + "   "+ position )
                         #if turnResults["otherKingInCheck"]!=False or turnResults["pointsGained"]!=0:
                         pointsArray[piece.position][position]=turnResults
                 except (ValueError,KeyError):
@@ -253,8 +275,8 @@ class Player:
         position=max(maxPointsArray, key=lambda d: d["rawPoints"])["move"]
 
         board.tryTurn(self,piece,position,[p for p in self.pieces if p.name=="King"][0],False,False)
-        #clear()
-        #board.printBoard()
+        clear()
+        board.printBoard()
         
         print "a"
       
@@ -363,9 +385,10 @@ class Board:
     def rotateBoard(self):
         pass
     def tryTurn(self,player,piecePosition,newPiecePosition,king,check4Check,resetMoves):
-        if piecePosition=="G8":
-            pass
-            #raw_input("G8 " + newPiecePosition + str(resetMoves))
+        if self.boardDict[piecePosition].name=="Rook":
+            
+            #pass
+            raw_input(piecePosition+" " + newPiecePosition + str(resetMoves))
             #raise ValueError
         otherPlayer=[p for p in self.players if p!=player][0]
         otherKing=[p for p in otherPlayer.pieces if p.name=="King"][0]
@@ -376,16 +399,15 @@ class Board:
             raise ValueError
         if newPiecePosition in self.boardDict.keys() and self.boardDict[newPiecePosition].name != "King":
             if self.boardDict[newPiecePosition].owner==player:
-                raw_input(piecePosition+" "+newPiecePosition)
+                #raw_input(piecePosition+" "+newPiecePosition)
                 raise ValueError
             capturedPiece=True
             savedPiece = self.boardDict[newPiecePosition]
             player.points+=self.boardDict[newPiecePosition].points
             player.capturedPieces.append(self.boardDict[newPiecePosition].symbol[len(self.boardDict[newPiecePosition].symbol)-2])
             self.boardDict[newPiecePosition].owner.pieces.remove(self.boardDict[newPiecePosition])
-            
+        self.boardDict[piecePosition].movePiece(newPiecePosition,self)#.position=newPiecePosition
         self.boardDict[piecePosition].hasMoved=True
-        self.boardDict[piecePosition].position=newPiecePosition
         self.NoTheWorldMustBePeopled() 
         turnData={"pointsGained":(player.points-savedPoints),"otherKingInCheck":otherKing.isInCheck(self),"centerData":self.boardDict[newPiecePosition].controlOrInCenter(self)}
         if king.isInCheck(self) and check4Check:
@@ -394,12 +416,14 @@ class Board:
                 player.capturedPieces=savedCapturedPieces
                 self.boardDict[newPiecePosition].owner.pieces.append(savedPiece)
             self.boardDict[newPiecePosition].hasMoved=False
-            self.boardDict[newPiecePosition].position=piecePosition
+            self.boardDict[newPiecePosition].movePiece(piecePosition,self)#.position=piecePosition
             self.NoTheWorldMustBePeopled()      
             raise ValueError
         if resetMoves:
+            if piecePosition=="D8" or newPiecePosition=="D8":
+                raw_input(piecePosition+"  "+newPiecePosition) 
             #raw_input(piecePosition+"  "+newPiecePosition)
-            self.boardDict[newPiecePosition].position=piecePosition   
+            self.boardDict[newPiecePosition].movePiece(piecePosition,self)#.position=piecePosition   
             self.NoTheWorldMustBePeopled() 
         else:
             raw_input(piecePosition+"  "+newPiecePosition)

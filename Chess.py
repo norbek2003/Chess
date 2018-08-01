@@ -98,6 +98,35 @@ class Pawn(Piece):
                 return False
         except IndexError:
             return False
+    def movePiece(self, position, board):
+        " Moves the piece and promotes if needed."
+        self.position = position   
+        if self.color == "White" and int(self.position[1]) == 8 or self.color == "Black" and int(self.position[1]) == 1:
+            self.promote()
+
+    def promote(self):
+        """ Promotes the pawn after reaching other side of board. """
+        while True:
+            try:
+                piece=raw_input("Which piece would you like to promote to Queen, Knight, Bishop, or Rook? [Q, N, B, R]\n->")[0].upper()
+                if piece not in ["Q", "N", "B", "R"]:
+                    raise ValueError
+                if piece == "Q":
+                    self.owner.pieces.append(Queen(self.owner, self.color, self.position))
+                    self.owner.pieces.remove(self)
+                if piece == "N":
+                    self.owner.pieces.append(Knight(self.owner, self.color, self.position))
+                    self.owner.pieces.remove(self)
+                if piece == "B":
+                    self.owner.pieces.append(Bishop(self.owner, self.color, self.position))
+                    self.owner.pieces.remove(self)
+                if piece == "R":
+                    self.owner.pieces.append(Rook(self.owner, self.color, self.position))
+                    self.owner.pieces.remove(self)                            
+            except ValueError:
+                pass
+            else:
+                break
 class Rook(Piece):
     """ Class that extends piece that deals with the rook's capabilities. """
     def __init__(self, owner, color, position):
@@ -111,6 +140,7 @@ class Rook(Piece):
     def isValidMove(self, position, positionSymbol, board):           
         """ Checks if the inputted position is a valid move. """
         increment = 1
+        
         if position in board.boardDict.keys() and self.color == board.boardDict[position].color:
             return False
         if position[1] == self.position[1]:#horizontal
@@ -289,13 +319,13 @@ class Player:
         self.otherPlayer = False
         self.AI = not human  
         if self.color == "White":
-            self.pieces = [Pawn(self, self.color, "A2"), Pawn(self, self.color, "B2"), Pawn(self, self.color, "C2"), Pawn(self, self.color, "D2"), Pawn(self, self.color, "E2"), Pawn(self, self.color, "F2"), Pawn(self, self.color, "G2"), Pawn(self, self.color, "H2"), Rook(self, self.color, "A1"), Knight(self, self.color, "B1"), Bishop(self, self.color, "C1"), Queen(self, self.color, "D1"), King(self, self.color, "E1"), Bishop(self, self.color, "F1"), Knight(self, self.color, "G1"), Rook(self, self.color, "H1")]
+            #self.pieces = [Pawn(self, self.color, "A2"), Pawn(self, self.color, "B2"), Pawn(self, self.color, "C2"), Pawn(self, self.color, "D2"), Pawn(self, self.color, "E2"), Pawn(self, self.color, "F2"), Pawn(self, self.color, "G2"), Pawn(self, self.color, "H2"), Rook(self, self.color, "A1"), Knight(self, self.color, "B1"), Bishop(self, self.color, "C1"), Queen(self, self.color, "D1"), King(self, self.color, "E1"), Bishop(self, self.color, "F1"), Knight(self, self.color, "G1"), Rook(self, self.color, "H1")]
             #self.pieces = [Pawn(self, self.color, "A2"), Pawn(self, self.color, "B2"), Pawn(self, self.color, "C2"), Pawn(self, self.color, "D2"), Pawn(self, self.color, "E2"), Pawn(self, self.color, "F2"), Pawn(self, self.color, "G2"), Pawn(self, self.color, "H2"), Rook(self, self.color, "A1"), King(self, self.color, "E1"), Rook(self, self.color, "H1")]
             
-            #self.pieces = [King(self, self.color, "H5"), Rook(self, self.color, "D8"), Pawn(self, self.color, "D1")]
+            self.pieces = [King(self, self.color, "H5"), Rook(self, self.color, "D8"), Pawn(self, self.color, "C7")]
         else:
-            self.pieces = [Pawn(self, self.color, "A7"), Pawn(self, self.color, "B7"), Pawn(self, self.color, "C7"), Pawn(self, self.color, "D7"), Pawn(self, self.color, "E7"), Pawn(self, self.color, "F7"), Pawn(self, self.color, "G7"), Pawn(self, self.color, "H7"), Rook(self, self.color, "A8"), Knight(self, self.color, "B8"), Bishop(self, self.color, "C8"), Queen(self, self.color, "D8"), King(self, self.color, "E8"), Bishop(self, self.color, "F8"), Knight(self, self.color, "G8"), Rook(self, self.color, "H8")]
-            #self.pieces = [Rook(self, self.color, "A4"), Rook(self, self.color, "A6"), Queen(self, self.color, "E1"), King(self, self.color, "A1")]
+            #self.pieces = [Pawn(self, self.color, "A7"), Pawn(self, self.color, "B7"), Pawn(self, self.color, "C7"), Pawn(self, self.color, "D7"), Pawn(self, self.color, "E7"), Pawn(self, self.color, "F7"), Pawn(self, self.color, "G7"), Pawn(self, self.color, "H7"), Rook(self, self.color, "A8"), Knight(self, self.color, "B8"), Bishop(self, self.color, "C8"), Queen(self, self.color, "D8"), King(self, self.color, "E8"), Bishop(self, self.color, "F8"), Knight(self, self.color, "G8"), Rook(self, self.color, "H8")]
+            self.pieces = [Rook(self, self.color, "A4"), Rook(self, self.color, "A6"), Queen(self, self.color, "E1"), King(self, self.color, "A1"), Pawn(self,self.color, "B2")]
         self.king = [p for p in self.pieces if p.name == "King"][0]
     def loadOtherPlayer(self, board):
         " Initializes the player's other player instance . "
@@ -305,7 +335,7 @@ class Player:
         board.count += 1
         board.printBoard()
         print str(board.count), depth
-        raw_input("->")
+        #raw_input("->")
         positions = [letter + number for number in "12345678" for letter in "ABCDEFGH"]        
         pointsArray = {}
         maxPointsArray = []
@@ -328,7 +358,7 @@ class Player:
      #       piece["otherPlayerMove"] = turn#["otherPlayerBestMove"]              
         
         for piece in pointsArray:
-            maxPointsArray.append({"piece":piece, "move":max(pointsArray[piece], key = lambda v: getRawMoveScore(pointsArray[piece][v])), "rawPoints":max(getRawMoveScore(move) for move in pointsArray[piece].values())})
+            maxPointsArray.append({"piece":piece, "move": max(pointsArray[piece], key = lambda v: getRawMoveScore(pointsArray[piece][v])), "rawPoints":max(getRawMoveScore(move) for move in pointsArray[piece].values())})
         #if depth>1 and not carryOutMove:            
         #    print depth
         #    return pointsArray

@@ -1,4 +1,4 @@
-# pylint: disable=C0103,C0303,C0301
+# pylint: disable=C0103,C0303,C0301,R1702
 
 from os import system, name
 from copy import deepcopy
@@ -69,6 +69,8 @@ class Pawn(Piece):
         self.points = 1
     def isValidMove(self, position, positionSymbol, board):
         """ Checks if the inputted position is a valid move. """
+        if position in board.boardDict.keys() and self.color == board.boardDict[position].color:
+            return False
         spotIsOccupied = False
         if positionSymbol != "   ":
             spotIsOccupied = True
@@ -106,27 +108,32 @@ class Pawn(Piece):
 
     def promote(self):
         """ Promotes the pawn after reaching other side of board. """
-        while True:
-            try:
-                piece=raw_input("Which piece would you like to promote to Queen, Knight, Bishop, or Rook? [Q, N, B, R]\n->")[0].upper()
-                if piece not in ["Q", "N", "B", "R"]:
-                    raise ValueError
-                if piece == "Q":
-                    self.owner.pieces.append(Queen(self.owner, self.color, self.position))
-                    self.owner.pieces.remove(self)
-                if piece == "N":
-                    self.owner.pieces.append(Knight(self.owner, self.color, self.position))
-                    self.owner.pieces.remove(self)
-                if piece == "B":
-                    self.owner.pieces.append(Bishop(self.owner, self.color, self.position))
-                    self.owner.pieces.remove(self)
-                if piece == "R":
-                    self.owner.pieces.append(Rook(self.owner, self.color, self.position))
-                    self.owner.pieces.remove(self)                            
-            except ValueError:
-                pass
-            else:
-                break
+        if not self.owner.AI:
+        
+            while True:
+                try:
+                    piece = raw_input("Which piece would you like to promote to Queen, Knight, Bishop, or Rook? [Q, N, B, R]\n->")[0].upper()
+                    if piece not in ["Q", "N", "B", "R"]:
+                        raise ValueError
+                    if piece == "Q":
+                        self.owner.pieces.append(Queen(self.owner, self.color, self.position))
+                        self.owner.pieces.remove(self)
+                    if piece == "N":
+                        self.owner.pieces.append(Knight(self.owner, self.color, self.position))
+                        self.owner.pieces.remove(self)
+                    if piece == "B":
+                        self.owner.pieces.append(Bishop(self.owner, self.color, self.position))
+                        self.owner.pieces.remove(self)
+                    if piece == "R":
+                        self.owner.pieces.append(Rook(self.owner, self.color, self.position))
+                        self.owner.pieces.remove(self)                            
+                except ValueError:
+                    pass
+                else:
+                    break
+        else:
+            self.owner.pieces.append(Queen(self.owner, self.color, self.position))
+            self.owner.pieces.remove(self)             
 class Rook(Piece):
     """ Class that extends piece that deals with the rook's capabilities. """
     def __init__(self, owner, color, position):
@@ -319,13 +326,13 @@ class Player:
         self.otherPlayer = False
         self.AI = not human  
         if self.color == "White":
-            #self.pieces = [Pawn(self, self.color, "A2"), Pawn(self, self.color, "B2"), Pawn(self, self.color, "C2"), Pawn(self, self.color, "D2"), Pawn(self, self.color, "E2"), Pawn(self, self.color, "F2"), Pawn(self, self.color, "G2"), Pawn(self, self.color, "H2"), Rook(self, self.color, "A1"), Knight(self, self.color, "B1"), Bishop(self, self.color, "C1"), Queen(self, self.color, "D1"), King(self, self.color, "E1"), Bishop(self, self.color, "F1"), Knight(self, self.color, "G1"), Rook(self, self.color, "H1")]
+            self.pieces = [Pawn(self, self.color, "A2"), Pawn(self, self.color, "B2"), Pawn(self, self.color, "C2"), Pawn(self, self.color, "D2"), Pawn(self, self.color, "E2"), Pawn(self, self.color, "F2"), Pawn(self, self.color, "G2"), Pawn(self, self.color, "H2"), Rook(self, self.color, "A1"), Knight(self, self.color, "B1"), Bishop(self, self.color, "C1"), Queen(self, self.color, "D1"), King(self, self.color, "E1"), Bishop(self, self.color, "F1"), Knight(self, self.color, "G1"), Rook(self, self.color, "H1")]
             #self.pieces = [Pawn(self, self.color, "A2"), Pawn(self, self.color, "B2"), Pawn(self, self.color, "C2"), Pawn(self, self.color, "D2"), Pawn(self, self.color, "E2"), Pawn(self, self.color, "F2"), Pawn(self, self.color, "G2"), Pawn(self, self.color, "H2"), Rook(self, self.color, "A1"), King(self, self.color, "E1"), Rook(self, self.color, "H1")]
             
-            self.pieces = [King(self, self.color, "H5"), Rook(self, self.color, "D8"), Pawn(self, self.color, "C7")]
+            #self.pieces = [King(self, self.color, "H5"), Rook(self, self.color, "D8"), Pawn(self, self.color, "C7")]
         else:
-            #self.pieces = [Pawn(self, self.color, "A7"), Pawn(self, self.color, "B7"), Pawn(self, self.color, "C7"), Pawn(self, self.color, "D7"), Pawn(self, self.color, "E7"), Pawn(self, self.color, "F7"), Pawn(self, self.color, "G7"), Pawn(self, self.color, "H7"), Rook(self, self.color, "A8"), Knight(self, self.color, "B8"), Bishop(self, self.color, "C8"), Queen(self, self.color, "D8"), King(self, self.color, "E8"), Bishop(self, self.color, "F8"), Knight(self, self.color, "G8"), Rook(self, self.color, "H8")]
-            self.pieces = [Rook(self, self.color, "A4"), Rook(self, self.color, "A6"), Queen(self, self.color, "E1"), King(self, self.color, "A1"), Pawn(self,self.color, "B2")]
+            self.pieces = [Pawn(self, self.color, "A7"), Pawn(self, self.color, "B7"), Pawn(self, self.color, "C7"), Pawn(self, self.color, "D7"), Pawn(self, self.color, "E7"), Pawn(self, self.color, "F7"), Pawn(self, self.color, "G7"), Pawn(self, self.color, "H7"), Rook(self, self.color, "A8"), Knight(self, self.color, "B8"), Bishop(self, self.color, "C8"), Queen(self, self.color, "D8"), King(self, self.color, "E8"), Bishop(self, self.color, "F8"), Knight(self, self.color, "G8"), Rook(self, self.color, "H8")]
+            #self.pieces = [Rook(self, self.color, "A4"), Rook(self, self.color, "A6"), Queen(self, self.color, "E1"), King(self, self.color, "A1"), Pawn(self,self.color, "B2")]
         self.king = [p for p in self.pieces if p.name == "King"][0]
     def loadOtherPlayer(self, board):
         " Initializes the player's other player instance . "
@@ -334,53 +341,28 @@ class Player:
         """ Checks if the inputted position is a valid move. """
         board.count += 1
         board.printBoard()
-        print str(board.count), depth
+        print str(board.count)
         #raw_input("->")
         positions = [letter + number for number in "12345678" for letter in "ABCDEFGH"]        
-        pointsArray = {}
-        maxPointsArray = []
+        pointsArray = []
         for piece in self.pieces:
-            pointsArray[piece.position] = {}
             for position in positions:
                 try:
                     if piece.isValidMove(position, board.getCoordinateSign(position), board):                    
-                        turnResults = board.tryTurn(self, piece.position, position, self.king, False, True, original, depth)[1]
-                        pointsArray[piece.position][position] = turnResults
+                        pointsArray.append(board.tryTurn(self, piece.position, position, self.king, False, True, original, depth)[1])
                 except (ValueError, KeyError):
                     pass
-            try:
-                if not bool(pointsArray[piece.position]):
-                    #pass
-                    del pointsArray[piece.position]
-            except KeyError:
-                pass
-      #      turn  =  board.tryTurn(self, piece["piece"], piece["move"], self.king, False, True, original, depth)[1]
-     #       piece["otherPlayerMove"] = turn#["otherPlayerBestMove"]              
-        
-        for piece in pointsArray:
-            maxPointsArray.append({"piece":piece, "move": max(pointsArray[piece], key = lambda v: getRawMoveScore(pointsArray[piece][v])), "rawPoints":max(getRawMoveScore(move) for move in pointsArray[piece].values())})
-        #if depth>1 and not carryOutMove:            
-        #    print depth
-        #    return pointsArray
-        #if depth == 1 and not carryOutMove:
+        bestMove=max(pointsArray, key = lambda d: d["totalRawPoints"])
         if depth < board.depth and not carryOutMove:
-            return pointsArray[max(maxPointsArray, key = lambda d: d["rawPoints"])["piece"]][max(maxPointsArray, key = lambda d: d["rawPoints"])["move"]]
+            return bestMove
         if depth == board.depth:
             print 1
         if carryOutMove:
-            print 1
-        
-        #board.tryTurn(self, piece, position, self.king, False, False, True, 1)
-        piece = max(maxPointsArray, key = lambda d: d["rawPoints"])["piece"]
-        position = max(maxPointsArray, key = lambda d: d["rawPoints"])["move"]
-        #if carryOutMove:
-         #   board.tryTurn(self, piece, position, self.king, False, False, True, 1)
-        
-            #return max(maxPointsArray, key = lambda d: d["rawPoints"])
-            
+            print 1        
+        if carryOutMove:
+            board.tryTurn(self, piece, position, self.king, False, False, True, 1)
         clear()
         board.printBoard()
-        
         print "a"
       
 class Board:    
@@ -448,7 +430,8 @@ class Board:
         """ 
         Alternate between the players and moves.
         
-        Accepts input from human players and running the chess AI for the AI players. """
+        Accepts input from human players and runs the chess AI for the AI players. 
+        """
         while self.gameWon is False:
             for player in self.players:
                 if player.AI is False:
@@ -491,8 +474,6 @@ class Board:
                     player.findBestMove(self, True, True, self.depth)
     def tryTurn(self, player, piecePosition, newPiecePosition, king, check4Check, resetMoves, original, depth):
         """ Performs the inputted move, returns information about the move, and undoes the move if a test move. """
-        #self.count+= 1
-        #print str(self.count), depth
         thePiece = self.boardDict[piecePosition]
         savedHasMoved = thePiece.hasMoved
         savedPoints = player.points
@@ -509,10 +490,17 @@ class Board:
         thePiece.movePiece(newPiecePosition, self)#.position = newPiecePosition
         thePiece.hasMoved = True
         self.NoTheWorldMustBePeopled() 
-        turnData = {"piece":piecePosition, "move":newPiecePosition, "pointsGained":(player.points-savedPoints), "otherKingInCheck":player.otherPlayer.king.isInCheck(self), "centerData":self.boardDict[newPiecePosition].controlOrInCenter(self), "firstMove":not savedHasMoved, "pieceWorth":self.boardDict[newPiecePosition].points, "piecesAttackingThisPiece":0, "piecesDefendingThisPiece":0}
+        turnData = {"piece":piecePosition, "move":newPiecePosition, "pointsGained":(player.points-savedPoints), "otherKingInCheck":player.otherPlayer.king.isInCheck(self), "centerData":self.boardDict[newPiecePosition].controlOrInCenter(self), "firstMove":not savedHasMoved, "pieceWorth":self.boardDict[newPiecePosition].points, "piecesAttackingThisPiece":0, "piecesDefendingThisPiece":0, "colorMove":player.color,"rawPoints":0,"totalRawPoints":0}
         
         if depth > 1:#if not original:
             turnData["otherPlayerBestMove"] = player.otherPlayer.findBestMove(self, False, False, depth-1)
+            for piece in player.otherPlayer.pieces:
+                if piece.isValidMove(newPiecePosition, self.getCoordinateSign(newPiecePosition), self):
+                    #raw_input(piece.position+" "+newPiecePosition)
+                    turnData["piecesAttackingThisPiece"] += 1
+            turnData["piecesAttackedByThisPiece"] = self.boardDict[newPiecePosition].numPiecesAttackedByPiece(self)
+            turnData["piecesDefendingThisPiece"] = self.boardDict[newPiecePosition].numPiecesDefendingThisPiece(self)
+                    
         if king.isInCheck(self) and check4Check:
             if capturedPiece:
                 player.points = savedPoints
@@ -525,12 +513,7 @@ class Board:
         if resetMoves:
             
 
-            for piece in player.otherPlayer.pieces:
-                if piece.isValidMove(newPiecePosition, self.getCoordinateSign(newPiecePosition), self):
-                    #raw_input(piece.position+" "+newPiecePosition)
-                    turnData["piecesAttackingThisPiece"] += 1
-            turnData["piecesAttackedByThisPiece"] = self.boardDict[newPiecePosition].numPiecesAttackedByPiece(self)
-            turnData["piecesDefendingThisPiece"] = self.boardDict[newPiecePosition].numPiecesDefendingThisPiece(self)
+            thePiece.hasMoved = savedHasMoved
             
             #clear()
             #self.printBoard()
@@ -546,7 +529,7 @@ class Board:
                 player.otherPlayer.pieces.append(savedPiece)
             self.NoTheWorldMustBePeopled() 
 
-        
+        getRawMoveScore(turnData) 
         return [True, turnData]
 
 def getRawMoveScore(move):
@@ -566,7 +549,13 @@ def getRawMoveScore(move):
         rawPoints += 1
     if move["piecesAttackingThisPiece"]+1 >= move["piecesDefendingThisPiece"]:
         rawPoints -= (move["piecesAttackingThisPiece"]+1-move["piecesDefendingThisPiece"])*move["pieceWorth"]
-    rawPoints += move["piecesAttackedByThisPiece"][0] + (move["piecesAttackedByThisPiece"][1]/2)
+    if "piecesAttackedByThisPiece" in move.keys():
+        rawPoints += move["piecesAttackedByThisPiece"][0] + (move["piecesAttackedByThisPiece"][1]/2)
+    move["rawPoints"] = rawPoints
+    move["totalRawPoints"] = rawPoints
+    if "otherPlayerBestMove" in move.keys():
+        getRawMoveScore(move["otherPlayerBestMove"])
+        move["totalRawPoints"] -= move["otherPlayerBestMove"]["totalRawPoints"]
     return rawPoints
 def colorRow(row, rowNum):
     """ Returns a colored version of the inputted row. """
@@ -614,4 +603,5 @@ def main():
     printBanner()
     board = Board()
     board.takeTurns()
-main()
+if __name__ == "__main__":
+    main()

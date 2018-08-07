@@ -1,4 +1,3 @@
-# pylint: disable=C0103,C0303,C0301,R1702
 
 from os import system, name
 from copy import deepcopy
@@ -46,6 +45,14 @@ class Piece:
         else:
             self.color = "White"
         return piecesDefendingThisPiece
+    def numPiecesAttackingThisPiece(self,board):
+        """ Returns the number of pieces attacking this piece. """
+        numPiecesAttacking = 0
+        for piece in self.owner.otherPlayer.pieces:
+            if piece.isValidMove(self.position, board.getCoordinateSign(self.position), board):
+                #raw_input(piece.position+" "+newPiecePosition)
+                numPiecesAttacking += 1
+        return numPiecesAttacking
     def numPiecesDefendedByPiece(self, board):
         pass
     def numPiecesAttackedByPiece(self, board):
@@ -77,7 +84,7 @@ class Pawn(Piece):
         try:
             if self.color == "White":
                 if self.hasMoved is False:
-                    if position == self.position[0]+str(int(self.position[1])+2) and not spotIsOccupied:
+                    if position == self.position[0]+str(int(self.position[1])+2) and not spotIsOccupied and self.position[0]+str(int(self.position[1])+1) not in board.boardDict.keys():
                         return True
                 if (position == self.position[0]+str(int(self.position[1])+1)) and not spotIsOccupied:
                     return True
@@ -88,13 +95,10 @@ class Pawn(Piece):
             else:
                 
                 if self.hasMoved is False:
-                    if position == self.position[0]+str(int(self.position[1])-2) and not spotIsOccupied:
+                    if position == self.position[0]+str(int(self.position[1])-2) and not spotIsOccupied and self.position[0]+str(int(self.position[1])-1) not in board.boardDict.keys():
                         return True
                 if position == self.position[0]+str(int(self.position[1])-1) and not spotIsOccupied:
-                    return True      
-                #p = ("ABCDEFGH"["ABCDEFGH".index(self.position[0])+1]+str(int(self.position[1])-1), "ABCDEFGH"["ABCDEFGH".index(self.position[0])-1]+str(int(self.position[1])-1))
-                #if position in p and spot is occupied:
-               
+                    return True                     
                 if self.position[0] != "H" and position in ("ABCDEFGH"["ABCDEFGH".index(self.position[0])+1]+str(int(self.position[1])-1), "ABCDEFGH"["ABCDEFGH".index(self.position[0])-1] + str(int(self.position[1])-1)) and spotIsOccupied:
                     return True            
                 return False
@@ -285,7 +289,7 @@ class King(Piece):
             
         if position == "C8" and self.color == "Black" and not inCheck and not self.hasMoved and not board.boardDict["A8"].hasMoved and board.boardDict["A8"].isValidMove("D8", "   ", board) and "D8" not in board.boardDict.keys():
             board.boardDict["A8"].movePiece("D8", board)#position = "D8"
-
+            self.position=position
             
         if position == "G8" and self.color == "Black" and not inCheck and not self.hasMoved and not board.boardDict["H8"].hasMoved and board.boardDict["H8"].isValidMove("F8", "   ", board) and "F8" not in board.boardDict.keys():
             board.boardDict["H8"].movePiece("F8", board)#position = "F8"
@@ -341,7 +345,7 @@ class Player:
         """ Checks if the inputted position is a valid move. """
         board.count += 1
         board.printBoard()
-        print str(board.count)
+        print str(board.count), str(depth)
         #raw_input("->")
         positions = [letter + number for number in "12345678" for letter in "ABCDEFGH"]        
         pointsArray = []
@@ -352,13 +356,15 @@ class Player:
                         pointsArray.append(board.tryTurn(self, piece.position, position, self.king, False, True, original, depth)[1])
                 except (ValueError, KeyError):
                     pass
-        bestMove=max(pointsArray, key = lambda d: d["totalRawPoints"])
+        bestMove = max(pointsArray, key=lambda d: d["totalRawPoints"])
+        pprint(bestMove)
+     #   raw_input("cont->")
+        if board.count > 365:
+            print "a"
         if depth < board.depth and not carryOutMove:
             return bestMove
         if depth == board.depth:
-            print 1
-        if carryOutMove:
-            print 1        
+            print 1       
         if carryOutMove:
             board.tryTurn(self, piece, position, self.king, False, False, True, 1)
         clear()
@@ -483,24 +489,36 @@ class Board:
             raise ValueError
         if newPiecePosition in self.boardDict.keys() and self.boardDict[newPiecePosition].name != "King" and self.boardDict[newPiecePosition].owner != player:
             capturedPiece = True
-            savedPiece = deepcopy(self.boardDict[newPiecePosition])
+            savedPiece=self.boardDict[newPiecePosition]
+            #savedPiece = deepcopy(self.boardDict[newPiecePosition])
             player.points += self.boardDict[newPiecePosition].points
             player.capturedPieces.append(self.boardDict[newPiecePosition].symbol[len(self.boardDict[newPiecePosition].symbol)-2])
             player.otherPlayer.pieces.remove(self.boardDict[newPiecePosition])
         thePiece.movePiece(newPiecePosition, self)#.position = newPiecePosition
         thePiece.hasMoved = True
         self.NoTheWorldMustBePeopled() 
-        turnData = {"piece":piecePosition, "move":newPiecePosition, "pointsGained":(player.points-savedPoints), "otherKingInCheck":player.otherPlayer.king.isInCheck(self), "centerData":self.boardDict[newPiecePosition].controlOrInCenter(self), "firstMove":not savedHasMoved, "pieceWorth":self.boardDict[newPiecePosition].points, "piecesAttackingThisPiece":0, "piecesDefendingThisPiece":0, "colorMove":player.color,"rawPoints":0,"totalRawPoints":0}
+        if self.count == 368:
+            self.printBoard()   
+            print piecePosition,newPiecePosition
+            raw_input("->")
+            
+        turnData = {
+            "piece":piecePosition, 
+            "move":newPiecePosition, 
+            "pointsGained":(player.points-savedPoints), 
+            "otherKingInCheck":player.otherPlayer.king.isInCheck(self), 
+            "centerData":thePiece.controlOrInCenter(self), 
+            "firstMove":not savedHasMoved, 
+            "pieceWorth":thePiece.points, 
+            "colorMove":player.color, 
+            "rawPoints":0, 
+            "totalRawPoints":0,
+            "piecesAttackingThisPiece":thePiece.numPiecesAttackingThisPiece(self),
+            "piecesAttackedByThisPiece":thePiece.numPiecesAttackedByPiece(self),
+            "piecesDefendingThisPiece":thePiece.numPiecesDefendingThisPiece(self)}
         
-        if depth > 1:#if not original:
-            turnData["otherPlayerBestMove"] = player.otherPlayer.findBestMove(self, False, False, depth-1)
-            for piece in player.otherPlayer.pieces:
-                if piece.isValidMove(newPiecePosition, self.getCoordinateSign(newPiecePosition), self):
-                    #raw_input(piece.position+" "+newPiecePosition)
-                    turnData["piecesAttackingThisPiece"] += 1
-            turnData["piecesAttackedByThisPiece"] = self.boardDict[newPiecePosition].numPiecesAttackedByPiece(self)
-            turnData["piecesDefendingThisPiece"] = self.boardDict[newPiecePosition].numPiecesDefendingThisPiece(self)
-                    
+        if depth > 1:
+            turnData["otherPlayerBestMove"] = player.otherPlayer.findBestMove(self, False, False, depth-1)                    
         if king.isInCheck(self) and check4Check:
             if capturedPiece:
                 player.points = savedPoints
@@ -511,17 +529,10 @@ class Board:
             self.NoTheWorldMustBePeopled()      
             raise ValueError
         if resetMoves:
-            
-
             thePiece.hasMoved = savedHasMoved
-            
-            #clear()
-            #self.printBoard()
-            #pprint(turnData)
-            #raw_input(piecePosition+" "+newPiecePosition+" "+str(depth))            
-            
-            
-            self.boardDict[newPiecePosition].movePiece(piecePosition, self)#.position = piecePosition   
+      
+            #self.boardDict[newPiecePosition].movePiece(piecePosition, self)#.position = piecePosition   
+            thePiece.movePiece(piecePosition, self)#.position = piecePosition   
             
             if capturedPiece:
                 player.points = savedPoints
@@ -530,6 +541,8 @@ class Board:
             self.NoTheWorldMustBePeopled() 
 
         getRawMoveScore(turnData) 
+          
+        
         return [True, turnData]
 
 def getRawMoveScore(move):

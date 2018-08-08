@@ -1,4 +1,4 @@
-
+import time
 from os import system, name
 from copy import deepcopy
 from pprint import pprint
@@ -17,15 +17,17 @@ class Piece:
         """ Checks if the piece controls the center or is in the center. """
         centerTier2 = ['D4', 'E4', 'D5', 'E5']
         centerTier1 = ['C3', 'D3', 'E3', 'F3', 'C6', 'D6', 'E6', 'F6', "C4", "C5", "F4", "F5"]
-        centerData = {"ControlCenterTier2":False, "ControlCenterTier1":False, "InCenterTier2":(self.position in centerTier2), "InCenterTier1":(self.position in centerTier1)}
+        centerData = {"ControlCenterTier2":[False,0], "ControlCenterTier1":[False,0], "InCenterTier2":(self.position in centerTier2), "InCenterTier1":(self.position in centerTier1)}
         for pos in centerTier2:
             if self.isValidMove(pos, " x ", board):
-                centerData["ControlCenterTier2"] = True
-                break
+                centerData["ControlCenterTier2"][0] = True
+                centerData["ControlCenterTier2"][1] += 1
+                #break
         for pos in centerTier1:
             if self.isValidMove(pos, " x ", board):
-                centerData["ControlCenterTier1"] = True
-                break
+                centerData["ControlCenterTier1"][0] = True
+                centerData["ControlCenterTier1"][1] += 1
+                #break
         return centerData
     def movePiece(self, position, board):
         " Moves the piece."
@@ -344,10 +346,8 @@ class Player:
         self.otherPlayer = [p for p in board.players if p != self][0]
     def findBestMove(self, board, carryOutMove, original, depth):
         """ Checks if the inputted position is a valid move. """
-        board.count += 1
-        board.printBoard()
-        print str(board.count), str(depth)
-        #raw_input("->")
+        board.count += 1            
+        print "    AI RUNNING >> CALCULATING POSSIBILITY : "+str(board.count)+". ELAPSED TIME : "+str(time.strftime("%M:%S", time.gmtime(time.time()-board.startTime)))+" MINUTES.\r",
         positions = [letter + number for number in "12345678" for letter in "ABCDEFGH"]        
         pointsArray = []
         for piece in self.pieces:
@@ -355,13 +355,9 @@ class Player:
                 try:
                     if piece.isValidMove(position, board.getCoordinateSign(position), board) and piece.position != position:                    
                         pointsArray.append(board.tryTurn(self, piece.position, position, self.king, False, True, original, depth)[1])
-                except NotImplementedError:#(ValueError, KeyError):
+                except (ValueError, KeyError):
                     pass
         bestMove = max(pointsArray, key=lambda d: d["totalRawPoints"])
-        pprint(bestMove)
-     #   raw_input("cont->")
-        if board.count > 365:
-            print "a"
         if depth < board.depth and not carryOutMove:
             return bestMove
         if depth == board.depth:
@@ -369,7 +365,8 @@ class Player:
         if carryOutMove:
             board.tryTurn(self, bestMove["piece"], bestMove["move"], self.king, False, False, True, 1)
         clear()
-        board.printBoard()
+
+        board.count=0
         print "a"
       
 class Board:    
@@ -478,6 +475,7 @@ class Board:
                             break
                                 
                 else:
+                    self.startTime=time.time()
                     player.findBestMove(self, True, True, self.depth)
     def tryTurn(self, player, piecePosition, newPiecePosition, king, check4Check, resetMoves, original, depth):
         """ Performs the inputted move, returns information about the move, and undoes the move if a test move. """
@@ -496,19 +494,9 @@ class Board:
             player.points += self.boardDict[newPiecePosition].points
             player.capturedPieces.append(self.boardDict[newPiecePosition].symbol[len(self.boardDict[newPiecePosition].symbol)-2])
             player.otherPlayer.pieces.remove(self.boardDict[newPiecePosition])
-        if self.count == 368:
-            self.printBoard()
         thePiece.movePiece(newPiecePosition, self)#.position = newPiecePosition
-        if self.count == 368:
-            self.printBoard()
-        #    if piecePosition=="G8" or newPiecePosition=="G8":
-        #        print self.boardDict.keys()
-        #        print "X"            
-                
         thePiece.hasMoved = True
-        #self.NoTheWorldMustBePeopled() 
-
-            
+        #self.NoTheWorldMustBePeopled()             
         turnData = {
             "piece":piecePosition, 
             "move":newPiecePosition, 
@@ -537,22 +525,9 @@ class Board:
             raise ValueError
         if resetMoves:
             thePiece.hasMoved = savedHasMoved      
-            if self.count == 368:
-                self.printBoard()
-            #    if piecePosition=="G8" or newPiecePosition=="G8":
-            #        print self.boardDict.keys()
-            #        print "X"            
-                    
+
             thePiece.movePiece(piecePosition, self)#.position = piecePosition   
-            #self.NoTheWorldMustBePeopled()
-            if self.count == 368:
-                self.printBoard()   
-                print piecePosition,newPiecePosition
-            #    if piecePosition=="G8" or newPiecePosition=="G8":
-            #        print self.boardDict.keys()
-            #        print "X"
-                    
-                #raw_input("->")            
+         
             if capturedPiece:
                 player.points = savedPoints
                 player.capturedPieces = savedCapturedPieces
@@ -567,10 +542,10 @@ class Board:
 def getRawMoveScore(move):
     """ Returns the raw score of the move based on randomly assigned weights. """
     rawPoints = move["pointsGained"]
-    if move["centerData"]["ControlCenterTier1"]:
-        rawPoints += 1
-    if move["centerData"]["ControlCenterTier2"]:
-        rawPoints += 2    
+    if move["centerData"]["ControlCenterTier1"][0]:
+        rawPoints += 1 + move["centerData"]["ControlCenterTier1"][1]
+    if move["centerData"]["ControlCenterTier2"][0]:
+        rawPoints += 2*(1 + move["centerData"]["ControlCenterTier2"][1])  
     if move["centerData"]["InCenterTier1"]:
         rawPoints += 1     
     if move["centerData"]["InCenterTier2"]:
@@ -586,7 +561,6 @@ def getRawMoveScore(move):
     move["rawPoints"] = rawPoints
     move["totalRawPoints"] = rawPoints
     if "otherPlayerBestMove" in move.keys():
-        getRawMoveScore(move["otherPlayerBestMove"])
         move["totalRawPoints"] -= move["otherPlayerBestMove"]["totalRawPoints"]
     return rawPoints
 def colorRow(row, rowNum):

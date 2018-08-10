@@ -359,9 +359,7 @@ class Player:
                     pass
         bestMove = max(pointsArray, key=lambda d: d["totalRawPoints"])
         if depth < board.depth and not carryOutMove:
-            return bestMove
-        if depth == board.depth:
-            print 1       
+            return bestMove     
         if carryOutMove:
             board.tryTurn(self, bestMove["piece"], bestMove["move"], self.king, False, False, True, 1)
         clear()
@@ -402,10 +400,16 @@ class Board:
                 break
         #raw_input("Press enter to continue\n->")
     def printBoard(self):
-        """ Prints out the chess board. """
+        """ Prints out the chess board from the white player's viewpoint. """
         for i in range(len(self.board)-1):
-            print colorRow(self.board[i], i)
+            print colorRow(self.board[i], i, "White")
         print "".join(self.board[8]).encode("utf-8")
+    def printReverseBoard(self):
+        """ Prints out the chess board from the black player's viewpoint. """
+        for i in range(len(self.board)-2,-1,-1):
+            print colorRow([self.board[i][0]] + self.board[i][1:][::-1], i, "Black")
+        print "".join([self.board[8][0]] + self.board[8][1:][::-1]).encode("utf-8")
+        
     def NoTheWorldMustBePeopled(self):#much ado about nothing -benedick
         """ Updates the player positions on the board. """
         self.boardDict = {}
@@ -442,7 +446,10 @@ class Board:
                     while self.gameWon is False:
                         try:
                             clear()
-                            self.printBoard()
+                            if player.color == "White":
+                                self.printBoard()
+                            else:
+                                self.printReverseBoard()
                             print "\nCaptured Pieces:" 
                             for p in self.players:
                                 print p.color+" : Captured Pieces  =  "+str(p.capturedPieces)+" | Points  =  "+str(p.points)
@@ -563,18 +570,19 @@ def getRawMoveScore(move):
     if "otherPlayerBestMove" in move.keys():
         move["totalRawPoints"] -= move["otherPlayerBestMove"]["totalRawPoints"]
     return rawPoints
-def colorRow(row, rowNum):
+def colorRow(row, rowNum, colorViewPoint):
     """ Returns a colored version of the inputted row. """
     colorRowList = []
     colorRowList.append(row[0])
+    colorOrder = [Back.WHITE, Back.BLACK]
+    if colorViewPoint == "Black":
+        colorOrder = [Back.BLACK, Back.WHITE]
     for i in range(1, len(row), 2):
         try:
             if rowNum % 2 == 0:
-                colorRowList.append(Back.WHITE+row[i]+Style.RESET_ALL)
-                colorRowList.append(Back.BLACK+row[i+1]+Style.RESET_ALL)
+                colorRowList += [colorOrder[0]+row[i]+Style.RESET_ALL, colorOrder[1]+row[i+1]+Style.RESET_ALL]
             else:
-                colorRowList.append(Back.BLACK+row[i]+Style.RESET_ALL)
-                colorRowList.append(Back.WHITE+row[i+1]+Style.RESET_ALL)       
+                colorRowList += [colorOrder[1]+row[i]+Style.RESET_ALL, colorOrder[0]+row[i+1]+Style.RESET_ALL]
         except IndexError:
             pass
 

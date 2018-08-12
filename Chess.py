@@ -3,8 +3,8 @@ from os import system, name
 from copy import deepcopy
 from pprint import pprint
 from colorama import Fore, Style, Back, init
-whiteColor = Fore.BLUE
-blackColor = Fore.RED
+whiteColor = ""
+blackColor = ""
 class Piece:
     """ Class dealing with default methods across all pieces. """
     def __init__(self, owner, color, position):
@@ -618,4 +618,6 @@ def main():
     board = Board()
     board.takeTurns()
 if __name__ == "__main__":
+    whiteColor = Fore.BLUE
+    blackColor = Fore.RED    
     main()

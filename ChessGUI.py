@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from Tkinter import *
 from Chess import *
 
@@ -24,7 +26,7 @@ class Application(Frame):
                         self.buttons[position]["bg"] = self.buttonsLastColor[position]
         if not self.firstClick:
             if self.board.boardDict[self.selectedPiece].isValidMove(coord, self.board.getCoordinateSign(coord), self.board):
-                self.board.boardDict[self.selectedPiece].movePiece(coord, self.board)
+                self.board.tryTurn(self.board.boardDict[self.selectedPiece].owner, self.selectedPiece, coord, self.board.boardDict[self.selectedPiece].owner.king, True, False, True, 1)
                 if self.board.currentPlayer == "White":
                     self.board.currentPlayer = "Black"
                 else:
@@ -76,6 +78,7 @@ class Application(Frame):
         self.pack()
         self.buttons={}
         self.board=Board()
+        #self.board.useUnicodePieces()
         self.board.currentPlayer="White"
         self.title="Thud!"
         self.createWidgets()
@@ -88,8 +91,9 @@ class Application(Frame):
 
 
 #board = Board()
-root = Tk()   
-root.geometry="2000x1500"
-app = Application(master=root)
-app.mainloop()
-root.destroy()
+if __name__ == "__main__":
+    root = Tk()   
+    root.geometry="2000x1500"
+    app = Application(master=root)
+    app.mainloop()
+    root.destroy()

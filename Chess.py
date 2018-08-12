@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import time
 from os import system, name
 from copy import deepcopy
@@ -5,14 +7,28 @@ from pprint import pprint
 from colorama import Fore, Style, Back, init
 whiteColor = ""
 blackColor = ""
+pieceSymbols={
+    "Pawn"  : " P ",
+    "Rook"  : " R ",
+    "Knight": " N ",
+    "Bishop": " B ",
+    "Queen" : " Q ",
+    "King"  : " K "
+}
 class Piece:
     """ Class dealing with default methods across all pieces. """
-    def __init__(self, owner, color, position):
+    def __init__(self, owner, color, position, name, points):
         self.color = color
-        self.position = position
+        self.name = name
+        self.points = points
+        self.position=position
         self.hasMoved = False
         self.owner = owner
         self.piecesDefendingThisPiece = 0
+        if self.color == "White":
+            self.symbol = whiteColor + pieceSymbols[self.name]
+        else:
+            self.symbol = blackColor + pieceSymbols[self.name]        
     def controlOrInCenter(self, board):
         """ Checks if the piece controls the center or is in the center. """
         centerTier2 = ['D4', 'E4', 'D5', 'E5']
@@ -70,13 +86,7 @@ class Piece:
 class Pawn(Piece):
     """ Class that extends piece that deals with the pawn's capabilities. """
     def __init__(self, owner, color, position):
-        Piece.__init__(self, owner, color, position)
-        if self.color == "White":
-            self.symbol = whiteColor+" P "
-        else:
-            self.symbol = blackColor+" P "
-        self.name = "Pawn"
-        self.points = 1
+        Piece.__init__(self, owner, color, position, "Pawn", 1)        
     def isValidMove(self, position, positionSymbol, board):
         """ Checks if the inputted position is a valid move. """
         if position in board.boardDict.keys() and self.color == board.boardDict[position].color:
@@ -144,13 +154,8 @@ class Pawn(Piece):
 class Rook(Piece):
     """ Class that extends piece that deals with the rook's capabilities. """
     def __init__(self, owner, color, position):
-        Piece.__init__(self, owner, color, position)
-        if self.color == "White":
-            self.symbol = whiteColor+" R "
-        else:           
-            self.symbol = blackColor+" R "
-        self.name = "Rook"
-        self.points = 5
+        Piece.__init__(self, owner, color, position, "Rook", 5)
+        
     def isValidMove(self, position, positionSymbol, board):           
         """ Checks if the inputted position is a valid move. """
         increment = 1
@@ -180,13 +185,8 @@ class Rook(Piece):
 class Knight(Piece):
     """ Class that extends piece that deals with the knight's capabilities. """
     def __init__(self, owner, color, position):
-        Piece.__init__(self, owner, color, position)
-        if self.color == "White":
-            self.symbol = whiteColor+" N "
-        else:           
-            self.symbol = blackColor+" N "
-        self.name = "Knight"
-        self.points = 3
+        Piece.__init__(self, owner, color, position, "Knight", 3)
+        
     def isValidMove(self, position, positionSymbol, board):           
         """ Checks if the inputted position is a valid move. """
         if position in board.boardDict.keys() and self.color == board.boardDict[position].color:
@@ -199,13 +199,8 @@ class Knight(Piece):
 class Bishop(Piece):
     """ Class that extends piece that deals with the bishops's capabilities. """
     def __init__(self, owner, color, position):
-        Piece.__init__(self, owner, color, position)
-        if self.color == "White":
-            self.symbol = whiteColor+" B "
-        else:           
-            self.symbol = blackColor+" B "
-        self.name = "Bishop"
-        self.points = 3
+        Piece.__init__(self, owner, color, position, "Bishop", 3)
+
     def isValidMove(self, position, positionSymbol, board):           
         """ Checks if the inputted position is a valid move. """       
         try:
@@ -226,13 +221,8 @@ class Bishop(Piece):
 class Queen(Piece):
     """ Class that extends piece that deals with the queens's capabilities. """
     def __init__(self, owner, color, position):
-        Piece.__init__(self, owner, color, position)
-        if self.color == "White":
-            self.symbol = whiteColor+" Q "
-        else:           
-            self.symbol = blackColor+" Q "
-        self.name = "Queen"
-        self.points = 9
+        Piece.__init__(self, owner, color, position,"Queen",9)
+        
     def isValidMove(self, position, positionSymbol, board):           
         """ Checks if the inputted position is a valid move. """
         rookQueen = Rook(self.owner, self.color, self.position)
@@ -243,13 +233,9 @@ class Queen(Piece):
 class King(Piece):
     """ Class that extends piece that deals with the kings's capabilities. """        
     def __init__(self, owner, color, position):
-        Piece.__init__(self, owner, color, position)
-        if self.color == "White":
-            self.symbol = whiteColor+" K "
-        else:           
-            self.symbol = blackColor+" K "
-        self.name = "King"
-        self.points = 100
+        Piece.__init__(self, owner, color, position,"King",100)
+        
+
         self.InCheckCurrently = False
     def isValidMove(self, position, positionSymbol, board):           
         """ Checks if the inputted position is a valid move. """
@@ -546,6 +532,18 @@ class Board:
         
         return [True, turnData]
 
+    def useUnicodePieces(self):
+        pieceSymbols={
+            "Pawn"  : " ♙ ",
+            "Rook"  : " ♖ ",
+            "Knight": " ♘ ",
+            "Bishop": " ♗ ",
+            "Queen" : " ♕ ",
+            "King"  : " ♔ "
+        }    
+        for player in self.players:
+            for piece in player.pieces:
+                piece.symbol = pieceSymbols[piece.name]       
 def getRawMoveScore(move):
     """ Returns the raw score of the move based on randomly assigned weights. """
     rawPoints = move["pointsGained"]
